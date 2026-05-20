@@ -1,0 +1,10 @@
+[project]
+name = "autoharness"
+version = "0.1.0"
+description = "Controllable, auditable multi-agent harness runtime."
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
