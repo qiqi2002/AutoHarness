@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Clarify M1 finish, tool dispatch, automatic transition, and acceptance edge semantics.
+- Add tool-backed trace fixture and negative trace fixtures.
+- Add optional JSON Schema contract tests.
 - Implement M1 runtime core with Action validation, state guards, double-buffer semantics, and tests.
 - Add local trace runner for M1 testing.
 - Add long-term maintenance structure.

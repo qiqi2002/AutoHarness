@@ -28,9 +28,15 @@ def run_trace_file(path: str | Path) -> dict[str, Any]:
             {
                 "draft_agent": {
                     "answer": "Accepted candidate payload.",
+                },
+                "tool_agent": {
+                    "answer": "Tool-backed accepted payload.",
                 }
             }
-        )
+        ),
+        tools={
+            "echo": lambda arguments: dict(arguments),
+        },
     )
     runtime.run_trace(load_trace(path))
     return runtime.snapshot()

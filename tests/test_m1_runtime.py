@@ -27,6 +27,11 @@ def load_example_trace() -> list[dict]:
         return json.load(handle)
 
 
+def load_trace(path: str) -> list[dict]:
+    with (ROOT / path).open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 class M1RuntimeTest(unittest.TestCase):
     def test_schema_rejects_invalid_uuid(self) -> None:
         action = {
@@ -169,6 +174,59 @@ class M1RuntimeTest(unittest.TestCase):
             runtime.apply(tool_dispatch)
         self.assertEqual(raised.exception.code, ErrorCode.TOOL_NOT_FOUND)
 
+    def test_tool_dispatch_executes_tool_before_agent(self) -> None:
+        class InspectingExecutor:
+            def dispatch(self, agent, input_source, current_payload):
+                return {
+                    "answer": input_source["data"]["result"]["answer"],
+                }
+
+        runtime = Runtime(
+            executor=InspectingExecutor(),
+            tools={
+                "echo": lambda arguments: dict(arguments),
+            },
+        )
+
+        runtime.run_trace(load_trace("examples/tool-action-trace.json"))
+
+        self.assertEqual(runtime.state, RuntimeState.DONE)
+        self.assertEqual(runtime.current_payload, {"answer": "Tool-backed accepted payload."})
+
+    def test_tool_input_requires_tool_name_and_arguments(self) -> None:
+        _, _, dispatch, *_ = load_trace("examples/tool-action-trace.json")
+        invalid_dispatch = {
+            **dispatch,
+            "payload": {
+                "target_agent_name": "tool_agent",
+                "input_source": {
+                    "type": "tool",
+                    "data": {
+                        "tool_name": "echo",
+                    },
+                },
+            },
+        }
+
+        with self.assertRaises(AutoHarnessError) as raised:
+            validate_action(invalid_dispatch)
+        self.assertEqual(raised.exception.code, ErrorCode.SCHEMA_INVALID)
+
+    def test_tool_must_return_object(self) -> None:
+        runtime = Runtime(
+            executor=StaticAgentExecutor({"tool_agent": {"answer": "never reached"}}),
+            tools={
+                "echo": lambda arguments: "not an object",
+            },
+        )
+        plan, create_agent, dispatch, *_ = load_trace("examples/tool-action-trace.json")
+
+        runtime.apply(plan)
+        runtime.apply(create_agent)
+        with self.assertRaises(AutoHarnessError) as raised:
+            runtime.apply(dispatch)
+        self.assertEqual(raised.exception.code, ErrorCode.SCHEMA_INVALID)
+
     def test_executor_must_return_object(self) -> None:
         class BadExecutor:
             def dispatch(self, agent, input_source, current_payload):
@@ -192,6 +250,29 @@ class M1RuntimeTest(unittest.TestCase):
             runtime.apply(plan)
         self.assertEqual(raised.exception.code, ErrorCode.IDEMPOTENCY_CONFLICT)
 
+    def test_finish_result_must_equal_current_payload(self) -> None:
+        runtime = Runtime(executor=StaticAgentExecutor({"draft_agent": {"answer": "Accepted candidate payload."}}))
+
+        with self.assertRaises(AutoHarnessError) as raised:
+            runtime.run_trace(load_trace("examples/invalid/finish-result-mismatch.json"))
+        self.assertEqual(raised.exception.code, ErrorCode.ACTION_NOT_ALLOWED)
+
+    def test_negative_trace_finish_before_accept_is_locked(self) -> None:
+        runtime = Runtime(executor=StaticAgentExecutor({"draft_agent": {"answer": "Accepted candidate payload."}}))
+
+        with self.assertRaises(AutoHarnessError) as raised:
+            runtime.run_trace(load_trace("examples/invalid/finish-before-accept.json"))
+        self.assertEqual(raised.exception.code, ErrorCode.TEMP_BUFFER_LOCKED)
+
+    def test_accept_output_without_temp_buffer_is_rejected(self) -> None:
+        runtime = Runtime()
+        runtime.state = RuntimeState.AWAITING_ACCEPTANCE
+        accept = load_example_trace()[3]
+
+        with self.assertRaises(AutoHarnessError) as raised:
+            runtime.apply(accept)
+        self.assertEqual(raised.exception.code, ErrorCode.ACTION_NOT_ALLOWED)
+
     def test_run_trace_file_returns_snapshot(self) -> None:
         snapshot = run_trace_file(ROOT / "examples" / "m1-action-trace.json")
 
@@ -209,6 +290,12 @@ class M1RuntimeTest(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         snapshot = json.loads(stdout.getvalue())
         self.assertEqual(snapshot["state"], "DONE")
+
+    def test_run_trace_file_handles_tool_trace(self) -> None:
+        snapshot = run_trace_file(ROOT / "examples" / "tool-action-trace.json")
+
+        self.assertEqual(snapshot["state"], "DONE")
+        self.assertEqual(snapshot["current_payload"], {"answer": "Tool-backed accepted payload."})
 
 
 if __name__ == "__main__":

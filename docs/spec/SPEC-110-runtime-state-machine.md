@@ -30,6 +30,8 @@
 - `FINALIZING` -> `DONE`
 - `*` --fatal error--> `FAILED`
 
+M1 Runtime 在构造时自动完成 `INIT -> PLANNING`。收到合法 `finish` 后，Runtime 在单次处理内完成 `EXECUTING -> FINALIZING -> DONE`。
+
 ## 4. Guard 规则
 
 ### 4.1 Schema Guard
@@ -44,6 +46,8 @@
 
 - `dispatch` 前校验 agent 存在。
 - 工具模式下校验 tool 存在、参数通过 schema。
+- 工具执行结果必须是 object。
+- Sub-Agent 输出必须是 object。
 
 ### 4.4 Lock Guard
 
@@ -54,14 +58,21 @@
 - `dispatch` 只写 `temp_buffer`，不改 `current_payload`。
 - `accept_output.Accept`：`temp_buffer -> current_payload`，然后清空 `temp_buffer`。
 - `accept_output.Reject`：仅清空 `temp_buffer`，`current_payload` 保持不变。
+- 若不存在 `temp_buffer`，`accept_output` 返回 `E_ACTION_NOT_ALLOWED`。
 
-## 6. 一致性与恢复
+## 6. Finish 语义
+
+M1 中 `finish.final_result` 必须等于当前 `current_payload`。这保证最终输出只能来自已经验收的 payload，而不是由 `finish` 动作绕过双缓冲机制。
+
+## 7. 一致性与恢复
 
 - 使用 `state_version` 做乐观锁，防止并发覆盖。
 - 每次成功提交 `current_payload` 后可创建 checkpoint。
 - 出现不可恢复错误时，Runtime 可回滚到最近 checkpoint 并进入 `REPLANNING` 或 `FAILED`。
 
-## 7. 终止条件
+M1 只要求 `state_version` 单调递增；checkpoint 与 rollback 留到 M2。
+
+## 8. 终止条件
 
 任务在以下任一条件终止：
 

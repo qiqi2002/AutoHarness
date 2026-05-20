@@ -71,13 +71,28 @@
 {
   "target_agent_name": "string",
   "input_source": {
-    "type": "variable | tool",
+    "type": "variable",
     "data": {}
   }
 }
 ```
 
-语义：将输入路由到目标 Sub-Agent；若 `type=tool` 则先执行工具。
+或：
+
+```json
+{
+  "target_agent_name": "string",
+  "input_source": {
+    "type": "tool",
+    "data": {
+      "tool_name": "string",
+      "arguments": {}
+    }
+  }
+}
+```
+
+语义：将输入路由到目标 Sub-Agent；若 `type=tool` 则 Runtime 先执行工具，并把工具结果作为输入的一部分交给目标 Sub-Agent。Action 中的 `input_source.data` 不包含工具结果，工具结果只存在于 Runtime 内部调度上下文和 trace/snapshot 实现中。
 
 ### 3.5 `accept_output`
 
@@ -105,8 +120,12 @@
 
 1. 当 `temp_buffer != null` 时，只允许 `accept_output`。
 2. `dispatch` 必须校验 `target_agent_name` 存在。
-3. `dispatch` 使用工具时必须校验 `tool_name` 存在且参数合法。
-4. `finish` 只能在可终止状态触发（详见 SPEC-110）。
+3. `dispatch` 使用工具时必须校验 `tool_name` 存在且 `arguments` 为 object。
+4. 工具执行结果必须是 object，否则返回 `E_SCHEMA_INVALID`。
+5. Sub-Agent 候选输出必须是 object，否则返回 `E_SCHEMA_INVALID`。
+6. `accept_output` 只能在存在 `temp_buffer` 时执行；若无待验收输出，返回 `E_ACTION_NOT_ALLOWED`。
+7. `finish` 只能在可终止状态触发（详见 SPEC-110）。
+8. M1 中 `finish.final_result` 必须等于当前已接受的 `current_payload`，否则返回 `E_ACTION_NOT_ALLOWED`。
 
 ## 5. 错误码（v0）
 

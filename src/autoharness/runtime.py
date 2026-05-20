@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Mapping, Protocol
+from typing import Any, Callable, Mapping, Protocol
 
 from autoharness.actions import Action, validate_action
 from autoharness.errors import AutoHarnessError, ErrorCode
@@ -69,7 +69,7 @@ class Runtime:
         self,
         *,
         executor: AgentExecutor | None = None,
-        tools: Mapping[str, Any] | None = None,
+        tools: Mapping[str, Callable[[Mapping[str, Any]], Mapping[str, Any]]] | None = None,
         initial_payload: Mapping[str, Any] | None = None,
     ) -> None:
         self.state = RuntimeState.PLANNING
@@ -196,6 +196,20 @@ class Runtime:
             tool_name = input_source["data"].get("tool_name")
             if not isinstance(tool_name, str) or tool_name not in self.tools:
                 raise AutoHarnessError(ErrorCode.TOOL_NOT_FOUND, f"tool not found: {tool_name}")
+            tool_result = self.tools[tool_name](deepcopy(input_source["data"]["arguments"]))
+            if not isinstance(tool_result, dict):
+                raise AutoHarnessError(
+                    ErrorCode.SCHEMA_INVALID,
+                    "tool output must be an object",
+                )
+            input_source = {
+                "type": "tool",
+                "data": {
+                    "tool_name": tool_name,
+                    "arguments": deepcopy(input_source["data"]["arguments"]),
+                    "result": deepcopy(tool_result),
+                },
+            }
 
         self.temp_buffer = self.executor.dispatch(
             self.agents[agent_name],
@@ -210,6 +224,11 @@ class Runtime:
         self.state = RuntimeState.AWAITING_ACCEPTANCE
 
     def _apply_accept_output(self, action: Action) -> None:
+        if self.temp_buffer is None:
+            raise AutoHarnessError(
+                ErrorCode.ACTION_NOT_ALLOWED,
+                "accept_output requires a pending temp_buffer",
+            )
         decision = action.payload["decision"]
         if decision == "Accept":
             self.current_payload = deepcopy(self.temp_buffer or {})
@@ -220,6 +239,11 @@ class Runtime:
             self.state = RuntimeState.REPLANNING
 
     def _apply_finish(self, action: Action) -> None:
+        if action.payload["final_result"] != self.current_payload:
+            raise AutoHarnessError(
+                ErrorCode.ACTION_NOT_ALLOWED,
+                "finish.final_result must equal current_payload",
+            )
         self.final_result = deepcopy(action.payload["final_result"])
         self.summary = action.payload["summary"]
         self.state = RuntimeState.FINALIZING

@@ -1,0 +1,71 @@
+[
+  {
+    "schema_version": "1.0",
+    "action_id": "aaaaaaaa-1111-4111-8111-111111111111",
+    "trace_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "action_type": "update_plan",
+    "payload": {
+      "plan_description": {
+        "goal": "Use a tool result to produce accepted payload"
+      },
+      "execution_config": {
+        "max_rounds": 3
+      },
+      "reason": "Initialize the tool-backed plan."
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "aaaaaaaa-2222-4222-8222-222222222222",
+    "trace_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "action_type": "create_agent",
+    "payload": {
+      "name": "tool_agent",
+      "role": "Produce a candidate answer from a tool result.",
+      "prompt": "Return a concise candidate payload based on tool output.",
+      "io_schema": {
+        "type": "object"
+      }
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "aaaaaaaa-3333-4333-8333-333333333333",
+    "trace_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "action_type": "dispatch",
+    "payload": {
+      "target_agent_name": "tool_agent",
+      "input_source": {
+        "type": "tool",
+        "data": {
+          "tool_name": "echo",
+          "arguments": {
+            "answer": "Tool-backed accepted payload."
+          }
+        }
+      }
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "aaaaaaaa-4444-4444-8444-444444444444",
+    "trace_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "action_type": "accept_output",
+    "payload": {
+      "decision": "Accept",
+      "reason": "The candidate output includes the tool result."
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "aaaaaaaa-5555-4555-8555-555555555555",
+    "trace_id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "action_type": "finish",
+    "payload": {
+      "final_result": {
+        "answer": "Tool-backed accepted payload."
+      },
+      "summary": "Completed the M1 tool-backed trace."
+    }
+  }
+]

@@ -4,6 +4,8 @@
 
 Goal: prove the protocol and state machine with a minimal runtime.
 
+Status: initial implementation formed.
+
 Scope:
 
 - Action envelope schema

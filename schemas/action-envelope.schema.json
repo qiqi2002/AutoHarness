@@ -257,7 +257,42 @@
               "type": "object"
             }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "tool"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tool_name",
+                    "arguments"
+                  ],
+                  "properties": {
+                    "tool_name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "arguments": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "accept_output_payload": {

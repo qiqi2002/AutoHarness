@@ -5,6 +5,9 @@ description = "Controllable, auditable multi-agent harness runtime."
 requires-python = ">=3.10"
 readme = "README.md"
 
+[project.optional-dependencies]
+test = ["jsonschema>=4.0"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

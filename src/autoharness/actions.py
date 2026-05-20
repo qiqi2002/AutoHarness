@@ -113,6 +113,10 @@ def _validate_dispatch(payload: Mapping[str, Any]) -> None:
     if input_source["type"] not in {"variable", "tool"}:
         _invalid("input_source.type must be 'variable' or 'tool'")
     _require_object(input_source["data"], "input_source.data")
+    if input_source["type"] == "tool":
+        _require_exact_keys(input_source["data"], {"tool_name", "arguments"}, "input_source.data")
+        _require_non_empty_string(input_source["data"]["tool_name"], "tool_name")
+        _require_object(input_source["data"]["arguments"], "arguments")
 
 
 def _validate_accept_output(payload: Mapping[str, Any]) -> None:

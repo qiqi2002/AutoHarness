@@ -55,8 +55,35 @@ Run the example trace through the deterministic M1 runtime:
 $env:PYTHONPATH='src'; python -m autoharness.run_trace examples/m1-action-trace.json
 ```
 
+Run the tool-backed trace:
+
+```powershell
+$env:PYTHONPATH='src'; python -m autoharness.run_trace examples/tool-action-trace.json
+```
+
 Run the current test suite:
 
 ```bash
 python -m unittest discover -s tests
 ```
+
+Schema contract tests use `jsonschema` when installed:
+
+```powershell
+pip install -e .[test]
+python -m unittest discover -s tests
+```
+
+Without `jsonschema`, runtime tests still run and schema contract tests are skipped.
+
+## M1 Implemented Surface
+
+- Action envelope and payload validation
+- Runtime state guard
+- idempotency guard
+- temp buffer lock guard
+- agent dependency guard
+- fake tool dispatch guard
+- double-buffer accept/reject semantics
+- `finish.final_result == current_payload` enforcement
+- happy-path, tool-path, and negative trace fixtures
