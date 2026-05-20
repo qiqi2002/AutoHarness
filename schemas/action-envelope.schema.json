@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoharness.local/schemas/action-envelope.schema.json",
+  "title": "AutoHarness Action Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "action_id",
+    "trace_id",
+    "action_type",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "action_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "trace_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "create_agent",
+        "update_agent",
+        "update_plan",
+        "dispatch",
+        "accept_output",
+        "finish"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "create_agent"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/create_agent_payload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "update_agent"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/update_agent_payload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "update_plan"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/update_plan_payload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "dispatch"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/dispatch_payload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "accept_output"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/accept_output_payload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "finish"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/finish_payload"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "create_agent_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role",
+        "prompt",
+        "io_schema"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "io_schema": {
+          "type": "object"
+        }
+      }
+    },
+    "update_agent_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "new_prompt",
+        "reason"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "new_prompt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "update_plan_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_description",
+        "execution_config",
+        "reason"
+      ],
+      "properties": {
+        "plan_description": {
+          "type": "object"
+        },
+        "execution_config": {
+          "type": "object"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "dispatch_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_agent_name",
+        "input_source"
+      ],
+      "properties": {
+        "target_agent_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "data"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "variable",
+                "tool"
+              ]
+            },
+            "data": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "accept_output_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "reason"
+      ],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "Accept",
+            "Reject"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "finish_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "final_result",
+        "summary"
+      ],
+      "properties": {
+        "final_result": {
+          "type": "object"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
