@@ -46,3 +46,17 @@ Any behavior-changing implementation should update at least one of:
 - an example trace
 - a conformance test
 - an ADR
+
+## M1 Local Test Entry
+
+Run the example trace through the deterministic M1 runtime:
+
+```powershell
+$env:PYTHONPATH='src'; python -m autoharness.run_trace examples/m1-action-trace.json
+```
+
+Run the current test suite:
+
+```bash
+python -m unittest discover -s tests
+```

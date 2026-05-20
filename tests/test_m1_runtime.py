@@ -3,13 +3,23 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+from io import StringIO
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from autoharness import AutoHarnessError, ErrorCode, Runtime, RuntimeState, StaticAgentExecutor, validate_action
+from autoharness import (
+    AutoHarnessError,
+    ErrorCode,
+    Runtime,
+    RuntimeState,
+    StaticAgentExecutor,
+    validate_action,
+)
+from autoharness.run_trace import main as run_trace_main
+from autoharness.run_trace import run_trace_file
 
 
 def load_example_trace() -> list[dict]:
@@ -181,6 +191,24 @@ class M1RuntimeTest(unittest.TestCase):
         with self.assertRaises(AutoHarnessError) as raised:
             runtime.apply(plan)
         self.assertEqual(raised.exception.code, ErrorCode.IDEMPOTENCY_CONFLICT)
+
+    def test_run_trace_file_returns_snapshot(self) -> None:
+        snapshot = run_trace_file(ROOT / "examples" / "m1-action-trace.json")
+
+        self.assertEqual(snapshot["state"], "DONE")
+        self.assertEqual(snapshot["current_payload"], {"answer": "Accepted candidate payload."})
+
+    def test_run_trace_cli_prints_snapshot_json(self) -> None:
+        stdout = StringIO()
+
+        exit_code = run_trace_main(
+            [str(ROOT / "examples" / "m1-action-trace.json")],
+            stdout=stdout,
+        )
+
+        self.assertEqual(exit_code, 0)
+        snapshot = json.loads(stdout.getvalue())
+        self.assertEqual(snapshot["state"], "DONE")
 
 
 if __name__ == "__main__":
