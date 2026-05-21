@@ -239,39 +239,34 @@
           "minLength": 1
         },
         "input_source": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "data"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "variable",
-                "tool"
-              ]
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "data"
+              ],
+              "properties": {
+                "type": {
+                  "const": "variable"
+                },
+                "data": {
+                  "type": "object"
+                }
+              }
             },
-            "data": {
-              "type": "object"
-            }
-          }
-        },
-        "allOf": [
-          {
-            "if": {
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "data"
+              ],
               "properties": {
                 "type": {
                   "const": "tool"
-                }
-              },
-              "required": [
-                "type"
-              ]
-            },
-            "then": {
-              "properties": {
+                },
                 "data": {
                   "type": "object",
                   "additionalProperties": false,
@@ -291,8 +286,8 @@
                 }
               }
             }
-          }
-        ]
+          ]
+        }
       }
     },
     "accept_output_payload": {

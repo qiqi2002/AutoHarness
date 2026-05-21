@@ -49,29 +49,35 @@ Any behavior-changing implementation should update at least one of:
 
 ## M1 Local Test Entry
 
+Use the project-local environment:
+
+```powershell
+python -m venv .venv
+$env:PIP_CACHE_DIR='.pip-cache'; .\.venv\bin\python.exe -m pip install -e ".[test]"
+```
+
 Run the example trace through the deterministic M1 runtime:
 
 ```powershell
-$env:PYTHONPATH='src'; python -m autoharness.run_trace examples/m1-action-trace.json
+.\.venv\bin\python.exe -m autoharness.run_trace examples/m1-action-trace.json
 ```
 
 Run the tool-backed trace:
 
 ```powershell
-$env:PYTHONPATH='src'; python -m autoharness.run_trace examples/tool-action-trace.json
+.\.venv\bin\python.exe -m autoharness.run_trace examples/tool-action-trace.json
 ```
 
 Run the current test suite:
 
-```bash
-python -m unittest discover -s tests
+```powershell
+.\.venv\bin\python.exe -m unittest discover -s tests
 ```
 
 Schema contract tests use `jsonschema` when installed:
 
 ```powershell
-pip install -e .[test]
-python -m unittest discover -s tests
+.\.venv\bin\python.exe -m unittest discover -s tests
 ```
 
 Without `jsonschema`, runtime tests still run and schema contract tests are skipped.
