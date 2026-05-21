@@ -96,6 +96,90 @@ class AtCoderProblemEditorialHarnessBuilder:
         }
 
 
+class AtCoderLatestEditorialHarnessBuilder:
+    """Build a WebWalk harness that discovers the latest finished contest."""
+
+    def build(self, task: Mapping[str, Any]) -> dict[str, Any]:
+        archive_url = task["archive_url"]
+        return {
+            "schema_version": "1.0",
+            "harness_id": "atcoder-latest-editorial",
+            "name": "atcoder_latest_editorial_harness",
+            "description": "Weak-model harness for finding the latest finished AtCoder contest editorial.",
+            "task": {
+                "name": task["name"],
+                "inputs": {
+                    "archive_url": archive_url,
+                    "start_url": task.get("start_url"),
+                },
+                "output_schema": _output_schema(task),
+            },
+            "agents": [
+                {
+                    "name": "latest_editorial_extractor",
+                    "role": "Weak model that reads WebWalk observations and accumulates the latest contest editorial result.",
+                    "prompt": (
+                        "Use Runtime-provided AtCoder observations only. After archive observation, identify the "
+                        "latest finished contest and produce editorial_url for the next WebWalk step. After the "
+                        "editorial page observation, return the final object matching the task output schema."
+                    ),
+                    "io_schema": {
+                        "type": "object",
+                    },
+                }
+            ],
+            "tools": [
+                {
+                    "name": "webwalk",
+                    "kind": "runtime_tool",
+                    "config": {
+                        "allowed_domains": deepcopy(task.get("allowed_domains", ["atcoder.jp"])),
+                        "limits": deepcopy(task.get("limits", {})),
+                    },
+                }
+            ],
+            "workflow": [
+                _dispatch_step_for_agent("open-archive", "latest_editorial_extractor", archive_url),
+                _accept_step("accept-archive", "Accept the archive observation and selected contest candidate."),
+                {
+                    "step_id": "open-selected-editorial",
+                    "type": "dispatch",
+                    "target_agent_name": "latest_editorial_extractor",
+                    "input_source": {
+                        "type": "tool",
+                        "data": {
+                            "tool_name": "webwalk",
+                            "arguments": {
+                                "operation": "open_url",
+                                "url": {
+                                    "$from_current_payload": "editorial_url"
+                                },
+                            },
+                        },
+                    },
+                },
+                _accept_step("accept-editorial", "Accept the final editorial result."),
+                {
+                    "step_id": "finish",
+                    "type": "finish",
+                    "summary": "Completed the generated AtCoder latest editorial harness.",
+                },
+            ],
+            "acceptance": {
+                "rules": [
+                    {
+                        "type": "schema",
+                        "schema": "schemas/tasks/atcoder_latest_editorial.schema.json",
+                    },
+                    {
+                        "type": "evidence_urls_must_be_visited",
+                    },
+                ]
+            },
+            "evaluations": [],
+        }
+
+
 def _format_url(task: Mapping[str, Any], template_name: str, inputs: Mapping[str, Any]) -> str:
     return task["url_templates"][template_name].format(**inputs)
 
@@ -110,10 +194,14 @@ def _output_schema(task: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _dispatch_step(step_id: str, url: str) -> dict[str, Any]:
+    return _dispatch_step_for_agent(step_id, "atcoder_extractor", url)
+
+
+def _dispatch_step_for_agent(step_id: str, agent_name: str, url: str) -> dict[str, Any]:
     return {
         "step_id": step_id,
         "type": "dispatch",
-        "target_agent_name": "atcoder_extractor",
+        "target_agent_name": agent_name,
         "input_source": {
             "type": "tool",
             "data": {

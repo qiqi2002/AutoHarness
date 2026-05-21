@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add model-backed strong HarnessBuilder and weak AgentExecutor adapters.
+- Add AtCoder latest editorial HarnessSpec fixture and dynamic current-payload workflow references.
 - Add HarnessSpec schema, mainline ADR/SPEC, deterministic builder, and runner.
 - Add the first generated AtCoder problem editorial harness fixture.
 - Add WebWalk Runtime tool spec, schemas, and conformance trace.

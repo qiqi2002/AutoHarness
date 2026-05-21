@@ -47,6 +47,17 @@ protocol:
 `finish.final_result` MUST be populated from Runtime `current_payload`, not from
 the harness spec. This preserves double-buffer acceptance semantics.
 
+Workflow tool arguments MAY contain runtime references:
+
+```json
+{"$from_current_payload": "editorial_url"}
+```
+
+Runtime MUST resolve those references against the latest accepted
+`current_payload` before compiling the dispatch step into an M1 Action. Missing
+paths are schema/runtime errors because they indicate the harness workflow
+depends on data that has not been accepted yet.
+
 ## 4. Strong and Weak Model Boundary
 
 The strong Orchestrator may generate or revise the HarnessSpec. Weak task models

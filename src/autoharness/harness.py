@@ -55,6 +55,7 @@ def run_harness_spec(
     for step in spec["workflow"]:
         step_type = step["type"]
         if step_type == "dispatch":
+            input_source = _resolve_input_source(step["input_source"], runtime.current_payload)
             apply(
                 _action(
                     spec,
@@ -63,7 +64,7 @@ def run_harness_spec(
                     step["step_id"],
                     {
                         "target_agent_name": step["target_agent_name"],
-                        "input_source": deepcopy(step["input_source"]),
+                        "input_source": input_source,
                     },
                 )
             )
@@ -134,6 +135,31 @@ def _action(
         "action_type": action_type,
         "payload": payload,
     }
+
+
+def _resolve_input_source(input_source: Mapping[str, Any], current_payload: Mapping[str, Any]) -> dict[str, Any]:
+    return _resolve_value(input_source, current_payload)
+
+
+def _resolve_value(value: Any, current_payload: Mapping[str, Any]) -> Any:
+    if isinstance(value, dict):
+        if set(value) == {"$from_current_payload"}:
+            return _lookup_path(current_payload, value["$from_current_payload"])
+        return {key: _resolve_value(item, current_payload) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_resolve_value(item, current_payload) for item in value]
+    return deepcopy(value)
+
+
+def _lookup_path(payload: Mapping[str, Any], path: Any) -> Any:
+    if not isinstance(path, str) or not path:
+        raise ValueError("$from_current_payload must be a non-empty dotted path")
+    value: Any = payload
+    for part in path.split("."):
+        if not isinstance(value, Mapping) or part not in value:
+            raise ValueError(f"current_payload path not found: {path}")
+        value = value[part]
+    return deepcopy(value)
 
 
 def _uuid_string(value: str) -> str:

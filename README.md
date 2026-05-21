@@ -84,6 +84,22 @@ Validate the first generated harness spec:
 .\.venv\bin\python.exe -m autoharness.schema_validation schemas/harness-spec.schema.json examples/harnesses/atcoder_problem_editorial_abc220_a.harness.json
 ```
 
+Validate both baseline harness specs:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.schema_validation schemas/harness-spec.schema.json examples/harnesses/atcoder_latest_editorial.harness.json
+```
+
+Smoke-test model-backed strong builder and weak executor adapters with the same API:
+
+```powershell
+$env:MINIMAX_API_KEY='...'
+$env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
+$env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
+$env:AUTOHARNESS_LLM_INSECURE_TLS='1'
+.\.venv\bin\python.exe scripts\model_harness_smoke.py
+```
+
 Run the current test suite:
 
 ```powershell
