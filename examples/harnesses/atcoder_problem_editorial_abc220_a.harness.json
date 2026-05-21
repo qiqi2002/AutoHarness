@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "harness_id": "atcoder-problem-editorial-abc220-abc220_a",
+  "name": "atcoder_problem_editorial_harness",
+  "description": "Weak-model harness for extracting one AtCoder problem editorial through Runtime WebWalk.",
+  "task": {
+    "name": "atcoder_problem_editorial",
+    "inputs": {
+      "contest_id": "abc220",
+      "problem_id": "abc220_a",
+      "problem_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+      "editorial_index_url": "https://atcoder.jp/contests/abc220/editorial",
+      "editorial_url": "https://atcoder.jp/contests/abc220/editorial/2700"
+    },
+    "output_schema": {
+      "$ref": "schemas/tasks/atcoder_problem_editorial.schema.json"
+    }
+  },
+  "agents": [
+    {
+      "name": "atcoder_extractor",
+      "role": "Weak model that accumulates visited AtCoder pages and extracts the final editorial result.",
+      "prompt": "Use only Runtime-provided WebWalk observations. Preserve evidence URLs from the trace. Return an object matching the task output schema when enough pages have been observed.",
+      "io_schema": {
+        "type": "object"
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "webwalk",
+      "kind": "runtime_tool",
+      "config": {
+        "allowed_domains": [
+          "atcoder.jp"
+        ],
+        "limits": {
+          "max_pages": 5,
+          "max_depth": 5,
+          "timeout_seconds": 30,
+          "request_delay_ms": 1000
+        }
+      }
+    }
+  ],
+  "workflow": [
+    {
+      "step_id": "open-problem",
+      "type": "dispatch",
+      "target_agent_name": "atcoder_extractor",
+      "input_source": {
+        "type": "tool",
+        "data": {
+          "tool_name": "webwalk",
+          "arguments": {
+            "operation": "open_url",
+            "url": "https://atcoder.jp/contests/abc220/tasks/abc220_a"
+          }
+        }
+      }
+    },
+    {
+      "step_id": "accept-problem",
+      "type": "accept_output",
+      "decision": "Accept",
+      "reason": "Accept the problem-page observation."
+    },
+    {
+      "step_id": "open-editorial-index",
+      "type": "dispatch",
+      "target_agent_name": "atcoder_extractor",
+      "input_source": {
+        "type": "tool",
+        "data": {
+          "tool_name": "webwalk",
+          "arguments": {
+            "operation": "open_url",
+            "url": "https://atcoder.jp/contests/abc220/editorial"
+          }
+        }
+      }
+    },
+    {
+      "step_id": "accept-editorial-index",
+      "type": "accept_output",
+      "decision": "Accept",
+      "reason": "Accept the editorial-index observation."
+    },
+    {
+      "step_id": "open-editorial-page",
+      "type": "dispatch",
+      "target_agent_name": "atcoder_extractor",
+      "input_source": {
+        "type": "tool",
+        "data": {
+          "tool_name": "webwalk",
+          "arguments": {
+            "operation": "open_url",
+            "url": "https://atcoder.jp/contests/abc220/editorial/2700"
+          }
+        }
+      }
+    },
+    {
+      "step_id": "accept-editorial-page",
+      "type": "accept_output",
+      "decision": "Accept",
+      "reason": "Accept the selected editorial-page observation."
+    },
+    {
+      "step_id": "finish",
+      "type": "finish",
+      "summary": "Completed the generated AtCoder problem editorial harness."
+    }
+  ],
+  "acceptance": {
+    "rules": [
+      {
+        "type": "schema",
+        "schema": "schemas/tasks/atcoder_problem_editorial.schema.json"
+      },
+      {
+        "type": "evidence_urls_must_be_visited"
+      }
+    ]
+  },
+  "evaluations": [
+    {
+      "type": "recorded_fixture",
+      "path": "examples/recorded/atcoder_problem_editorial_abc220_a.json"
+    }
+  ]
+}

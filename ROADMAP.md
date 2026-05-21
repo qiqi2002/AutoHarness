@@ -2,7 +2,7 @@
 
 ## M1: Runnable Contract
 
-Goal: prove the protocol and state machine with a minimal runtime.
+Goal: prove the protocol, state machine, and generated harness contract with a minimal runtime.
 
 Status: initial implementation formed.
 
@@ -16,6 +16,9 @@ Scope:
 - lock guard
 - double-buffer accept/reject behavior
 - example traces usable as conformance fixtures
+- HarnessSpec schema
+- deterministic HarnessSpec runner
+- one generated harness fixture
 
 Exit criteria:
 
@@ -24,6 +27,7 @@ Exit criteria:
 - `dispatch` cannot mutate `current_payload` directly
 - `accept_output.Accept` commits `temp_buffer`
 - `accept_output.Reject` clears `temp_buffer` without changing `current_payload`
+- a valid HarnessSpec compiles into M1 Actions and reaches `DONE`
 
 ## M2: Reliable Runtime
 

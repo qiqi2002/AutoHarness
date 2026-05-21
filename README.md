@@ -4,6 +4,7 @@ AutoHarness is a controllable and auditable multi-agent harness/runtime for buil
 
 The core idea is simple:
 
+- A strong Orchestrator designs a reusable `HarnessSpec` for a task.
 - The Orchestrator decides by emitting structured Actions.
 - The Runtime validates Actions, applies state guards, and executes allowed work.
 - Sub-Agents produce candidate outputs.
@@ -35,8 +36,10 @@ The core idea is simple:
 3. `docs/spec/SPEC-100-action-protocol.md`
 4. `docs/spec/SPEC-110-runtime-state-machine.md`
 5. `docs/spec/SPEC-120-webwalk-tool.md`
-6. `schemas/action-envelope.schema.json`
-7. `examples/m1-action-trace.json`
+6. `docs/spec/SPEC-130-harness-spec.md`
+7. `schemas/action-envelope.schema.json`
+8. `schemas/harness-spec.schema.json`
+9. `examples/m1-action-trace.json`
 
 ## Maintenance Rule
 
@@ -75,6 +78,12 @@ Run the Runtime-backed WebWalk tool trace:
 .\.venv\bin\python.exe -m autoharness.run_trace examples/webwalk-tool-action-trace.json
 ```
 
+Validate the first generated harness spec:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.schema_validation schemas/harness-spec.schema.json examples/harnesses/atcoder_problem_editorial_abc220_a.harness.json
+```
+
 Run the current test suite:
 
 ```powershell
@@ -97,6 +106,8 @@ Without `jsonschema`, runtime tests still run and schema contract tests are skip
 - temp buffer lock guard
 - agent dependency guard
 - fake tool dispatch guard
+- Tool Host dispatch abstraction
+- HarnessSpec schema and deterministic harness runner
 - double-buffer accept/reject semantics
 - `finish.final_result == current_payload` enforcement
 - happy-path, tool-path, and negative trace fixtures

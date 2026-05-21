@@ -104,3 +104,13 @@ class TaskSchemaContractTest(unittest.TestCase):
             "schemas/tasks/atcoder_problem_editorial.schema.json",
             "examples/recorded/atcoder_problem_editorial_abc220_a.json",
         )
+
+
+@unittest.skipIf(Draft202012Validator is None, "jsonschema is not installed")
+class HarnessSchemaContractTest(unittest.TestCase):
+    def test_atcoder_harness_matches_schema(self) -> None:
+        schema = load_json(ROOT / "schemas" / "harness-spec.schema.json")
+        data = load_json(ROOT / "examples" / "harnesses" / "atcoder_problem_editorial_abc220_a.harness.json")
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        errors = sorted(validator.iter_errors(data), key=lambda error: error.path)
+        self.assertEqual(errors, [], [error.message for error in errors])

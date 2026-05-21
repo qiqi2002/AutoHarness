@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add HarnessSpec schema, mainline ADR/SPEC, deterministic builder, and runner.
+- Add the first generated AtCoder problem editorial harness fixture.
 - Add WebWalk Runtime tool spec, schemas, and conformance trace.
 - Add Tool Host dispatch abstraction for Runtime tools.
 - Validate compact agentic WebWalk planner actions against JSON Schema.
