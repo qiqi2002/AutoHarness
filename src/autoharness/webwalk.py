@@ -75,6 +75,19 @@ class WebWalkTool:
         self._last_request_at = time.monotonic()
         return page
 
+    def current_page(self) -> WebPage | None:
+        if not self.pages:
+            return None
+        return self.pages[-1]
+
+    def open_link(self, link_id: int) -> WebPage:
+        page = self.current_page()
+        if page is None:
+            raise AutoHarnessError(ErrorCode.ACTION_NOT_ALLOWED, "no current page")
+        if link_id < 0 or link_id >= len(page.links):
+            raise AutoHarnessError(ErrorCode.ACTION_NOT_ALLOWED, f"link id out of range: {link_id}")
+        return self.open(page.links[link_id].url)
+
     def trace(self) -> list[dict[str, str | int]]:
         return [
             {

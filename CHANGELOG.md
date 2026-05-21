@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add agentic WebWalk loop where the model emits restricted browser actions.
 - Add recorded fixture and schema validation helpers for demo outputs.
 - Add specific AtCoder problem editorial WebWalk demo.
 - Add AtCoder WebWalk demo with restricted domain walking and MiniMax-compatible JSON structuring.

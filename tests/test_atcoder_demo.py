@@ -25,6 +25,7 @@ from autoharness.demos.atcoder_problem_editorial import (
     problem_letter,
     select_editorial_candidate,
 )
+from autoharness.demos.agentic_webwalk import AgenticRunConfig, ScriptedPlanner, run_agentic_webwalk
 from autoharness.llm import ChatConfig, extract_json_object, strip_think_blocks
 from autoharness.demos.io import emit_result
 from autoharness.webwalk import WebWalkTool, parse_page
@@ -194,6 +195,64 @@ class AtCoderDemoTest(unittest.TestCase):
                 emit_result(result, output=str(output), schema_path=None)
 
             self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["problem_id"], "abc220_a")
+
+    def test_agentic_webwalk_with_scripted_planner(self) -> None:
+        class FakeWalker:
+            def __init__(self) -> None:
+                self.pages = []
+
+            def open(self, url):
+                if url.endswith("/tasks/abc220_a"):
+                    page = parse_page(url, PROBLEM_HTML)
+                elif url.endswith("/editorial"):
+                    page = parse_page(url, PROBLEM_EDITORIAL_INDEX_HTML)
+                else:
+                    page = parse_page(url, "<html><head><title>Editorial</title></head><body>A - Find Multiple editorial text.</body></html>")
+                self.pages.append(page)
+                return page
+
+            def open_link(self, link_id):
+                return self.open(self.pages[-1].links[link_id].url)
+
+            def trace(self):
+                return [
+                    {"step": index, "url": page.url, "title": page.title, "links": len(page.links)}
+                    for index, page in enumerate(self.pages, start=1)
+                ]
+
+        planner = ScriptedPlanner(
+            [
+                {"action": "open_url", "url": "https://atcoder.jp/contests/abc220/tasks/abc220_a"},
+                {"action": "open_url", "url": "https://atcoder.jp/contests/abc220/editorial"},
+                {"action": "open_link", "link_id": 0},
+                {
+                    "action": "final",
+                    "result": {
+                        "contest_id": "abc220",
+                        "problem_id": "abc220_a",
+                        "problem_title": "A - Find Multiple",
+                        "problem_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+                        "editorial_index_url": "https://atcoder.jp/contests/abc220/editorial",
+                        "editorial_url": "https://atcoder.jp/contests/abc220/editorial/2707",
+                        "editorial_title": "Editorial",
+                        "editorial_text_excerpt": "A - Find Multiple editorial text.",
+                        "evidence": ["https://atcoder.jp/contests/abc220/editorial/2707"],
+                        "webwalk_trace": ["model should not control runtime trace"],
+                    },
+                },
+            ]
+        )
+
+        result = run_agentic_webwalk(
+            AgenticRunConfig("abc220", "abc220_a", max_steps=5, use_schema_validation=True),
+            planner=planner,
+            walker=FakeWalker(),
+        )
+
+        self.assertEqual(result["problem_id"], "abc220_a")
+        self.assertEqual(len(result["webwalk_trace"]), 3)
+        self.assertEqual(result["evidence"][0]["url"], "https://atcoder.jp/contests/abc220/editorial/2707")
+        self.assertEqual(result["agentic_action_trace"][2]["action"]["action"], "open_link")
 
 
 if __name__ == "__main__":

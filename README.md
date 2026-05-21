@@ -141,3 +141,13 @@ $env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
 $env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
 .\.venv\bin\python.exe -m autoharness.demos.atcoder_problem_editorial abc220 abc220_a
 ```
+
+Run the full agentic loop where the model emits WebWalk actions:
+
+```powershell
+$env:MINIMAX_API_KEY='...'
+$env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
+$env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
+$env:AUTOHARNESS_LLM_INSECURE_TLS='1'
+.\.venv\bin\python.exe -m autoharness.demos.agentic_webwalk abc220 abc220_a --validate-schema
+```
