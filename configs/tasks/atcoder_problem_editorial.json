@@ -1,0 +1,25 @@
+{
+  "name": "atcoder_problem_editorial",
+  "allowed_domains": [
+    "atcoder.jp"
+  ],
+  "goal": "Given a contest_id and problem_id, find the specific AtCoder problem editorial by walking AtCoder pages.",
+  "inputs": {
+    "contest_id": "abc220",
+    "problem_id": "abc220_a"
+  },
+  "url_templates": {
+    "problem": "https://atcoder.jp/contests/{contest_id}/tasks/{problem_id}",
+    "editorial_index": "https://atcoder.jp/contests/{contest_id}/editorial"
+  },
+  "limits": {
+    "max_pages": 5,
+    "max_depth": 5,
+    "timeout_seconds": 30,
+    "request_delay_ms": 1000
+  },
+  "tools": [
+    "webwalk"
+  ],
+  "output_schema": "schemas/tasks/atcoder_problem_editorial.schema.json"
+}

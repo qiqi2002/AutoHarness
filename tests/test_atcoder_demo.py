@@ -13,6 +13,15 @@ from autoharness.demos.atcoder_latest_editorial import (
     find_editorial_links,
     find_latest_finished_contest,
 )
+from autoharness.demos.atcoder_problem_editorial import (
+    ProblemRequest,
+    build_result as build_problem_result,
+    editorial_links,
+    extract_problem_title,
+    problem_index,
+    problem_letter,
+    select_editorial_candidate,
+)
 from autoharness.llm import ChatConfig, extract_json_object, strip_think_blocks
 from autoharness.webwalk import WebWalkTool, parse_page
 
@@ -32,6 +41,20 @@ EDITORIAL_HTML = """
 <body>
 <a href="/contests/abc999/editorial/12345">A - First Problem</a>
 <a href="/contests/abc999/editorial/12346">B - Second Problem</a>
+</body></html>
+"""
+
+PROBLEM_HTML = """
+<html><head><title>A - Find Multiple - AtCoder Beginner Contest 220</title></head>
+<body><h2>A - Find Multiple</h2></body></html>
+"""
+
+PROBLEM_EDITORIAL_INDEX_HTML = """
+<html><head><title>Editorial - ABC220</title></head>
+<body>
+<a href="/contests/abc220/editorial/2707">Editorial</a>
+<a href="/contests/abc220/editorial/2708">Editorial</a>
+<a href="/contests/abc220/editorial/2709">Editorial</a>
 </body></html>
 """
 
@@ -102,6 +125,61 @@ class AtCoderDemoTest(unittest.TestCase):
         config = json.loads((ROOT / "configs" / "tasks" / "atcoder_latest_editorial.json").read_text())
 
         self.assertEqual(config["name"], "atcoder_latest_editorial")
+
+    def test_extracts_specific_problem_title(self) -> None:
+        page = parse_page("https://atcoder.jp/contests/abc220/tasks/abc220_a", PROBLEM_HTML)
+
+        self.assertEqual(extract_problem_title(page, "abc220_a"), "A - Find Multiple")
+
+    def test_problem_letter_and_index(self) -> None:
+        self.assertEqual(problem_letter("abc220_a"), "A")
+        self.assertEqual(problem_letter("abc220_c"), "C")
+        self.assertEqual(problem_index("abc220_c"), 2)
+
+    def test_selects_nth_official_editorial_candidate(self) -> None:
+        page = parse_page("https://atcoder.jp/contests/abc220/editorial", PROBLEM_EDITORIAL_INDEX_HTML)
+
+        candidate = select_editorial_candidate(
+            page,
+            contest_id="abc220",
+            problem_id="abc220_b",
+            problem_title="B - Base K",
+        )
+
+        self.assertEqual(candidate.url, "https://atcoder.jp/contests/abc220/editorial/2708")
+        self.assertEqual(candidate.strategy, "nth_official_english_editorial")
+
+    def test_specific_problem_result_shape(self) -> None:
+        problem_page = parse_page("https://atcoder.jp/contests/abc220/tasks/abc220_a", PROBLEM_HTML)
+        index_page = parse_page("https://atcoder.jp/contests/abc220/editorial", PROBLEM_EDITORIAL_INDEX_HTML)
+        candidate = select_editorial_candidate(
+            index_page,
+            contest_id="abc220",
+            problem_id="abc220_a",
+            problem_title="A - Find Multiple",
+        )
+        editorial_page = parse_page(candidate.url, "<html><head><title>Editorial</title></head><body>Use multiples.</body></html>")
+
+        result = build_problem_result(
+            request=ProblemRequest("abc220", "abc220_a"),
+            problem_title="A - Find Multiple",
+            candidate=candidate,
+            problem_page=problem_page,
+            editorial_index_page=index_page,
+            editorial_page=editorial_page,
+            trace=[],
+        )
+
+        self.assertEqual(result["contest_id"], "abc220")
+        self.assertEqual(result["problem_id"], "abc220_a")
+        self.assertEqual(result["editorial_url"], "https://atcoder.jp/contests/abc220/editorial/2707")
+        self.assertIn("editorial_text_excerpt", result)
+
+    def test_specific_problem_config_is_valid_json(self) -> None:
+        config = json.loads((ROOT / "configs" / "tasks" / "atcoder_problem_editorial.json").read_text())
+
+        self.assertEqual(config["name"], "atcoder_problem_editorial")
+        self.assertEqual(config["inputs"]["problem_id"], "abc220_a")
 
 
 if __name__ == "__main__":

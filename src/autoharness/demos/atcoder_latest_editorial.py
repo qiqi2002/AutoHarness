@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -181,6 +182,8 @@ def merge_with_fallback(model_result: dict[str, Any], fallback: dict[str, Any]) 
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Find the latest AtCoder editorial via WebWalk.")
     parser.add_argument("--no-model", action="store_true", help="Run WebWalk extraction without calling the model.")
     args = parser.parse_args(argv)

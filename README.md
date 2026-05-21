@@ -120,3 +120,18 @@ If your local Python is behind a proxy with a self-signed certificate chain, set
 ```powershell
 $env:AUTOHARNESS_LLM_INSECURE_TLS='1'
 ```
+
+Find a specific problem editorial:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.demos.atcoder_problem_editorial abc220 abc220_a --no-model
+```
+
+With MiniMax structuring:
+
+```powershell
+$env:MINIMAX_API_KEY='...'
+$env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
+$env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
+.\.venv\bin\python.exe -m autoharness.demos.atcoder_problem_editorial abc220 abc220_a
+```

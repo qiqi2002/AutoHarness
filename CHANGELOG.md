@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add specific AtCoder problem editorial WebWalk demo.
 - Add AtCoder WebWalk demo with restricted domain walking and MiniMax-compatible JSON structuring.
 - Clarify M1 finish, tool dispatch, automatic transition, and acceptance edge semantics.
 - Add tool-backed trace fixture and negative trace fixtures.
