@@ -53,7 +53,7 @@ Use the project-local environment:
 
 ```powershell
 python -m venv .venv
-$env:PIP_CACHE_DIR='.pip-cache'; .\.venv\bin\python.exe -m pip install -e ".[test]"
+$env:PIP_CACHE_DIR='.pip-cache'; .\.venv\bin\python.exe -m pip install -e ".[test,demo]"
 ```
 
 Run the example trace through the deterministic M1 runtime:
@@ -93,3 +93,30 @@ Without `jsonschema`, runtime tests still run and schema contract tests are skip
 - double-buffer accept/reject semantics
 - `finish.final_result == current_payload` enforcement
 - happy-path, tool-path, and negative trace fixtures
+
+## Demo: AtCoder WebWalk
+
+The AtCoder demo walks pages directly from AtCoder without using a search tool.
+
+Run WebWalk extraction without a model:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.demos.atcoder_latest_editorial --no-model
+```
+
+Run WebWalk plus MiniMax structuring:
+
+```powershell
+$env:MINIMAX_API_KEY='...'
+$env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
+$env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
+.\.venv\bin\python.exe -m autoharness.demos.atcoder_latest_editorial
+```
+
+The key is read only from the process environment and should not be committed.
+
+If your local Python is behind a proxy with a self-signed certificate chain, set this only for local development:
+
+```powershell
+$env:AUTOHARNESS_LLM_INSECURE_TLS='1'
+```

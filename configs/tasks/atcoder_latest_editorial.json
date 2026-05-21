@@ -1,0 +1,19 @@
+{
+  "name": "atcoder_latest_editorial",
+  "start_url": "https://atcoder.jp/",
+  "archive_url": "https://atcoder.jp/contests/archive?lang=en",
+  "allowed_domains": [
+    "atcoder.jp"
+  ],
+  "goal": "Find the latest finished AtCoder contest and return its official editorial links.",
+  "limits": {
+    "max_pages": 4,
+    "max_depth": 5,
+    "timeout_seconds": 30,
+    "request_delay_ms": 1000
+  },
+  "tools": [
+    "webwalk"
+  ],
+  "output_schema": "schemas/tasks/atcoder_latest_editorial.schema.json"
+}
