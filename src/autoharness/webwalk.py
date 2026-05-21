@@ -8,7 +8,7 @@ import ssl
 import time
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Iterable
+from typing import Any, Iterable, Mapping
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
@@ -116,6 +116,46 @@ class WebWalkTool:
             time.sleep(remaining_ms / 1000)
 
 
+class WebWalkRuntimeTool:
+    """Runtime tool adapter for restricted WebWalk operations."""
+
+    def __init__(self, walker: WebWalkTool) -> None:
+        self.walker = walker
+
+    def __call__(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        operation = _require_operation(arguments)
+        if operation == "open_url":
+            _require_exact_argument_keys(arguments, {"operation", "url"})
+            page = self.walker.open(_require_string_argument(arguments, "url"))
+        elif operation == "open_link":
+            _require_exact_argument_keys(arguments, {"operation", "link_id"})
+            page = self.walker.open_link(_require_int_argument(arguments, "link_id"))
+        else:
+            raise AutoHarnessError(ErrorCode.SCHEMA_INVALID, f"unsupported webwalk operation: {operation}")
+
+        return {
+            "operation": operation,
+            "page": page_observation(page),
+            "webwalk_trace": self.walker.trace(),
+        }
+
+
+def page_observation(page: WebPage, *, max_text_chars: int = 5000, max_links: int = 100) -> dict[str, Any]:
+    return {
+        "url": page.url,
+        "title": page.title,
+        "text_excerpt": page.text[:max_text_chars],
+        "links": [
+            {
+                "id": link.id,
+                "text": link.text,
+                "url": link.url,
+            }
+            for link in page.links[:max_links]
+        ],
+    }
+
+
 def parse_page(url: str, page_html: str, *, max_text_chars: int = 12000) -> WebPage:
     parser = _PageParser(url)
     parser.feed(page_html)
@@ -127,6 +167,43 @@ def parse_page(url: str, page_html: str, *, max_text_chars: int = 12000) -> WebP
         links=parser.links,
         html=page_html,
     )
+
+
+def _require_operation(arguments: Mapping[str, Any]) -> str:
+    operation = arguments.get("operation")
+    if operation not in {"open_url", "open_link"}:
+        raise AutoHarnessError(
+            ErrorCode.SCHEMA_INVALID,
+            "webwalk operation must be 'open_url' or 'open_link'",
+        )
+    return operation
+
+
+def _require_exact_argument_keys(arguments: Mapping[str, Any], expected: set[str]) -> None:
+    actual = set(arguments)
+    missing = sorted(expected - actual)
+    extra = sorted(actual - expected)
+    if missing or extra:
+        parts = []
+        if missing:
+            parts.append(f"missing keys: {', '.join(missing)}")
+        if extra:
+            parts.append(f"extra keys: {', '.join(extra)}")
+        raise AutoHarnessError(ErrorCode.SCHEMA_INVALID, f"webwalk arguments have invalid keys ({'; '.join(parts)})")
+
+
+def _require_string_argument(arguments: Mapping[str, Any], key: str) -> str:
+    value = arguments.get(key)
+    if not isinstance(value, str) or not value:
+        raise AutoHarnessError(ErrorCode.SCHEMA_INVALID, f"webwalk argument {key} must be a non-empty string")
+    return value
+
+
+def _require_int_argument(arguments: Mapping[str, Any], key: str) -> int:
+    value = arguments.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise AutoHarnessError(ErrorCode.SCHEMA_INVALID, f"webwalk argument {key} must be an integer")
+    return value
 
 
 class _PageParser(HTMLParser):

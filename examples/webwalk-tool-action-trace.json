@@ -1,0 +1,77 @@
+[
+  {
+    "schema_version": "1.0",
+    "action_id": "bbbbbbbb-1111-4111-8111-111111111111",
+    "trace_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "action_type": "update_plan",
+    "payload": {
+      "plan_description": {
+        "goal": "Use the WebWalk tool through Runtime dispatch"
+      },
+      "execution_config": {
+        "max_rounds": 3,
+        "tools": [
+          "webwalk"
+        ]
+      },
+      "reason": "Initialize a Runtime-backed WebWalk task."
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "bbbbbbbb-2222-4222-8222-222222222222",
+    "trace_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "action_type": "create_agent",
+    "payload": {
+      "name": "observation_agent",
+      "role": "Convert a WebWalk observation into a candidate payload.",
+      "prompt": "Return a concise candidate payload from the WebWalk tool result.",
+      "io_schema": {
+        "type": "object"
+      }
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "bbbbbbbb-3333-4333-8333-333333333333",
+    "trace_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "action_type": "dispatch",
+    "payload": {
+      "target_agent_name": "observation_agent",
+      "input_source": {
+        "type": "tool",
+        "data": {
+          "tool_name": "webwalk",
+          "arguments": {
+            "operation": "open_url",
+            "url": "https://atcoder.jp/contests/abc220/tasks/abc220_a"
+          }
+        }
+      }
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "bbbbbbbb-4444-4444-8444-444444444444",
+    "trace_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "action_type": "accept_output",
+    "payload": {
+      "decision": "Accept",
+      "reason": "The WebWalk observation is accepted into current_payload."
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "action_id": "bbbbbbbb-5555-4555-8555-555555555555",
+    "trace_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "action_type": "finish",
+    "payload": {
+      "final_result": {
+        "visited_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+        "page_title": "A - Find Multiple",
+        "trace_length": 1
+      },
+      "summary": "Completed the M1 WebWalk tool trace."
+    }
+  }
+]

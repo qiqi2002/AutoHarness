@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add WebWalk Runtime tool spec, schemas, and conformance trace.
+- Add Tool Host dispatch abstraction for Runtime tools.
+- Validate compact agentic WebWalk planner actions against JSON Schema.
 - Add agentic WebWalk loop where the model emits restricted browser actions.
 - Add recorded fixture and schema validation helpers for demo outputs.
 - Add specific AtCoder problem editorial WebWalk demo.

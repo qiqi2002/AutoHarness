@@ -10,10 +10,11 @@ from typing import Any, Protocol
 from autoharness.demos.io import emit_result
 from autoharness.llm import ChatClient, ChatConfig
 from autoharness.schema_validation import require_valid_with_schema
-from autoharness.webwalk import WebPage, WebWalkLimits, WebWalkTool
+from autoharness.webwalk import WebPage, WebWalkLimits, WebWalkTool, page_observation
 
 
 RESULT_SCHEMA = "schemas/tasks/atcoder_problem_editorial.schema.json"
+PLANNER_ACTION_SCHEMA = "schemas/tools/webwalk-planner-action.schema.json"
 
 
 class JsonPlanner(Protocol):
@@ -100,6 +101,7 @@ def run_agentic_webwalk(
     action_log: list[dict[str, Any]] = []
     for step in range(1, config.max_steps + 1):
         action = planner.complete_json(messages)
+        validate_planner_action(action)
         action_log.append({"step": step, "action": action})
         action_type = action.get("action")
 
@@ -143,19 +145,11 @@ def system_prompt() -> str:
 
 
 def observation_for_page(page: WebPage) -> dict[str, Any]:
-    return {
-        "url": page.url,
-        "title": page.title,
-        "text_excerpt": page.text[:5000],
-        "links": [
-            {
-                "id": link.id,
-                "text": link.text,
-                "url": link.url,
-            }
-            for link in page.links[:100]
-        ],
-    }
+    return page_observation(page)
+
+
+def validate_planner_action(action: dict[str, Any]) -> None:
+    require_valid_with_schema(action, PLANNER_ACTION_SCHEMA)
 
 
 def normalize_final_result(

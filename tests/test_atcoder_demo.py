@@ -25,7 +25,12 @@ from autoharness.demos.atcoder_problem_editorial import (
     problem_letter,
     select_editorial_candidate,
 )
-from autoharness.demos.agentic_webwalk import AgenticRunConfig, ScriptedPlanner, run_agentic_webwalk
+from autoharness.demos.agentic_webwalk import (
+    AgenticRunConfig,
+    ScriptedPlanner,
+    run_agentic_webwalk,
+    validate_planner_action,
+)
 from autoharness.llm import ChatConfig, extract_json_object, strip_think_blocks
 from autoharness.demos.io import emit_result
 from autoharness.webwalk import WebWalkTool, parse_page
@@ -253,6 +258,10 @@ class AtCoderDemoTest(unittest.TestCase):
         self.assertEqual(len(result["webwalk_trace"]), 3)
         self.assertEqual(result["evidence"][0]["url"], "https://atcoder.jp/contests/abc220/editorial/2707")
         self.assertEqual(result["agentic_action_trace"][2]["action"]["action"], "open_link")
+
+    def test_agentic_webwalk_rejects_invalid_planner_action_shape(self) -> None:
+        with self.assertRaises(ValueError):
+            validate_planner_action({"action": "open_link", "url": "https://atcoder.jp/"})
 
 
 if __name__ == "__main__":

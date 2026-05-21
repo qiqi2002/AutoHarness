@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autoharness.local/schemas/tools/webwalk-tool-arguments.schema.json",
+  "title": "WebWalk Tool Arguments",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation"
+  ],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": [
+        "open_url",
+        "open_link"
+      ]
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "link_id": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "open_url"
+          }
+        },
+        "required": [
+          "operation"
+        ]
+      },
+      "then": {
+        "required": [
+          "url"
+        ],
+        "not": {
+          "required": [
+            "link_id"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "open_link"
+          }
+        },
+        "required": [
+          "operation"
+        ]
+      },
+      "then": {
+        "required": [
+          "link_id"
+        ],
+        "not": {
+          "required": [
+            "url"
+          ]
+        }
+      }
+    }
+  ]
+}

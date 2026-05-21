@@ -16,10 +16,12 @@ from autoharness import (
     Runtime,
     RuntimeState,
     StaticAgentExecutor,
+    WebWalkRuntimeTool,
     validate_action,
 )
 from autoharness.run_trace import main as run_trace_main
 from autoharness.run_trace import run_trace_file
+from autoharness.webwalk import parse_page
 
 
 def load_example_trace() -> list[dict]:
@@ -193,6 +195,58 @@ class M1RuntimeTest(unittest.TestCase):
         self.assertEqual(runtime.state, RuntimeState.DONE)
         self.assertEqual(runtime.current_payload, {"answer": "Tool-backed accepted payload."})
 
+    def test_webwalk_tool_dispatch_runs_through_runtime_acceptance(self) -> None:
+        class FakeWalker:
+            def __init__(self) -> None:
+                self.pages = []
+
+            def open(self, url):
+                page = parse_page(url, "<html><head><title>A - Find Multiple</title></head><body>Problem A.</body></html>")
+                self.pages.append(page)
+                return page
+
+            def open_link(self, link_id):
+                return self.open(self.pages[-1].links[link_id].url)
+
+            def trace(self):
+                return [
+                    {"step": index, "url": page.url, "title": page.title, "links": len(page.links)}
+                    for index, page in enumerate(self.pages, start=1)
+                ]
+
+        class WebWalkObservationExecutor:
+            def dispatch(self, agent, input_source, current_payload):
+                result = input_source["data"]["result"]
+                return {
+                    "visited_url": result["page"]["url"],
+                    "page_title": result["page"]["title"],
+                    "trace_length": len(result["webwalk_trace"]),
+                }
+
+        runtime = Runtime(
+            executor=WebWalkObservationExecutor(),
+            tools={"webwalk": WebWalkRuntimeTool(FakeWalker())},
+        )
+
+        runtime.run_trace(load_trace("examples/webwalk-tool-action-trace.json"))
+
+        self.assertEqual(runtime.state, RuntimeState.DONE)
+        self.assertEqual(
+            runtime.current_payload,
+            {
+                "visited_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+                "page_title": "A - Find Multiple",
+                "trace_length": 1,
+            },
+        )
+
+    def test_webwalk_tool_rejects_invalid_arguments(self) -> None:
+        tool = WebWalkRuntimeTool(object())
+
+        with self.assertRaises(AutoHarnessError) as raised:
+            tool({"operation": "open_url"})
+        self.assertEqual(raised.exception.code, ErrorCode.SCHEMA_INVALID)
+
     def test_tool_input_requires_tool_name_and_arguments(self) -> None:
         _, _, dispatch, *_ = load_trace("examples/tool-action-trace.json")
         invalid_dispatch = {
@@ -296,6 +350,12 @@ class M1RuntimeTest(unittest.TestCase):
 
         self.assertEqual(snapshot["state"], "DONE")
         self.assertEqual(snapshot["current_payload"], {"answer": "Tool-backed accepted payload."})
+
+    def test_run_trace_file_handles_webwalk_tool_trace(self) -> None:
+        snapshot = run_trace_file(ROOT / "examples" / "webwalk-tool-action-trace.json")
+
+        self.assertEqual(snapshot["state"], "DONE")
+        self.assertEqual(snapshot["current_payload"]["trace_length"], 1)
 
 
 if __name__ == "__main__":

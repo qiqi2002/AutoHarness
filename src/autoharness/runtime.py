@@ -9,6 +9,7 @@ from typing import Any, Callable, Mapping, Protocol
 
 from autoharness.actions import Action, validate_action
 from autoharness.errors import AutoHarnessError, ErrorCode
+from autoharness.tool_host import ToolHandler, ToolHost
 
 
 class RuntimeState(str, Enum):
@@ -69,7 +70,7 @@ class Runtime:
         self,
         *,
         executor: AgentExecutor | None = None,
-        tools: Mapping[str, Callable[[Mapping[str, Any]], Mapping[str, Any]]] | None = None,
+        tools: Mapping[str, ToolHandler | Callable[[Mapping[str, Any]], Mapping[str, Any]]] | ToolHost | None = None,
         initial_payload: Mapping[str, Any] | None = None,
     ) -> None:
         self.state = RuntimeState.PLANNING
@@ -84,7 +85,7 @@ class Runtime:
         self.final_result: dict[str, Any] | None = None
         self.summary: str | None = None
         self.executor = executor or StaticAgentExecutor()
-        self.tools = dict(tools or {})
+        self.tool_host = tools if isinstance(tools, ToolHost) else ToolHost(tools)
 
     def apply(self, raw_action: Mapping[str, Any]) -> None:
         action = validate_action(raw_action)
@@ -194,14 +195,9 @@ class Runtime:
         input_source = payload["input_source"]
         if input_source["type"] == "tool":
             tool_name = input_source["data"].get("tool_name")
-            if not isinstance(tool_name, str) or tool_name not in self.tools:
+            if not isinstance(tool_name, str) or not self.tool_host.has(tool_name):
                 raise AutoHarnessError(ErrorCode.TOOL_NOT_FOUND, f"tool not found: {tool_name}")
-            tool_result = self.tools[tool_name](deepcopy(input_source["data"]["arguments"]))
-            if not isinstance(tool_result, dict):
-                raise AutoHarnessError(
-                    ErrorCode.SCHEMA_INVALID,
-                    "tool output must be an object",
-                )
+            tool_result = self.tool_host.dispatch(tool_name, input_source["data"]["arguments"])
             input_source = {
                 "type": "tool",
                 "data": {

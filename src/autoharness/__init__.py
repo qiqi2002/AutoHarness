@@ -9,6 +9,8 @@ from autoharness.runtime import (
     RuntimeState,
     StaticAgentExecutor,
 )
+from autoharness.tool_host import ToolDefinition, ToolHost
+from autoharness.webwalk import WebWalkRuntimeTool, WebWalkTool
 
 __all__ = [
     "Action",
@@ -19,5 +21,9 @@ __all__ = [
     "Runtime",
     "RuntimeState",
     "StaticAgentExecutor",
+    "ToolDefinition",
+    "ToolHost",
+    "WebWalkRuntimeTool",
+    "WebWalkTool",
     "validate_action",
 ]

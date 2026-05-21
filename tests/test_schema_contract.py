@@ -34,6 +34,7 @@ class ActionSchemaContractTest(unittest.TestCase):
         traces = [
             "examples/m1-action-trace.json",
             "examples/tool-action-trace.json",
+            "examples/webwalk-tool-action-trace.json",
             "examples/invalid/finish-before-accept.json",
             "examples/invalid/finish-result-mismatch.json",
         ]
@@ -67,6 +68,26 @@ class ActionSchemaContractTest(unittest.TestCase):
         }
 
         self.assert_invalid_action(action)
+
+    def test_webwalk_tool_arguments_schema(self) -> None:
+        schema = load_json(ROOT / "schemas" / "tools" / "webwalk-tool-arguments.schema.json")
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+
+        valid = {"operation": "open_url", "url": "https://atcoder.jp/contests/abc220"}
+        invalid = {"operation": "open_url", "url": "https://atcoder.jp/contests/abc220", "link_id": 0}
+
+        self.assertEqual(list(validator.iter_errors(valid)), [])
+        self.assertNotEqual(list(validator.iter_errors(invalid)), [])
+
+    def test_webwalk_planner_action_schema(self) -> None:
+        schema = load_json(ROOT / "schemas" / "tools" / "webwalk-planner-action.schema.json")
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+
+        valid = {"action": "open_link", "link_id": 3}
+        invalid = {"action": "open_link", "url": "https://atcoder.jp/"}
+
+        self.assertEqual(list(validator.iter_errors(valid)), [])
+        self.assertNotEqual(list(validator.iter_errors(invalid)), [])
 
 
 @unittest.skipIf(Draft202012Validator is None, "jsonschema is not installed")

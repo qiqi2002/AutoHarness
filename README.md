@@ -34,8 +34,9 @@ The core idea is simple:
 2. `docs/adr/ADR-0001-orchestrator-runtime-boundary.md`
 3. `docs/spec/SPEC-100-action-protocol.md`
 4. `docs/spec/SPEC-110-runtime-state-machine.md`
-5. `schemas/action-envelope.schema.json`
-6. `examples/m1-action-trace.json`
+5. `docs/spec/SPEC-120-webwalk-tool.md`
+6. `schemas/action-envelope.schema.json`
+7. `examples/m1-action-trace.json`
 
 ## Maintenance Rule
 
@@ -66,6 +67,12 @@ Run the tool-backed trace:
 
 ```powershell
 .\.venv\bin\python.exe -m autoharness.run_trace examples/tool-action-trace.json
+```
+
+Run the Runtime-backed WebWalk tool trace:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.run_trace examples/webwalk-tool-action-trace.json
 ```
 
 Run the current test suite:
