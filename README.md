@@ -127,6 +127,12 @@ Find a specific problem editorial:
 .\.venv\bin\python.exe -m autoharness.demos.atcoder_problem_editorial abc220 abc220_a --no-model
 ```
 
+Record and validate a live fixture:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.demos.atcoder_problem_editorial abc220 abc220_a --no-model --validate-schema --output examples/recorded/atcoder_problem_editorial_abc220_a.json
+```
+
 With MiniMax structuring:
 
 ```powershell

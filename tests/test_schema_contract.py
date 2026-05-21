@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from test_m1_runtime import ROOT, load_trace
+from autoharness.schema_validation import load_json
 
 try:
     from jsonschema import Draft202012Validator, FormatChecker
@@ -66,3 +67,19 @@ class ActionSchemaContractTest(unittest.TestCase):
         }
 
         self.assert_invalid_action(action)
+
+
+@unittest.skipIf(Draft202012Validator is None, "jsonschema is not installed")
+class TaskSchemaContractTest(unittest.TestCase):
+    def assert_valid_json_file(self, schema_path: str, data_path: str) -> None:
+        schema = load_json(ROOT / schema_path)
+        data = load_json(ROOT / data_path)
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        errors = sorted(validator.iter_errors(data), key=lambda error: error.path)
+        self.assertEqual(errors, [], [error.message for error in errors])
+
+    def test_recorded_problem_editorial_matches_schema(self) -> None:
+        self.assert_valid_json_file(
+            "schemas/tasks/atcoder_problem_editorial.schema.json",
+            "examples/recorded/atcoder_problem_editorial_abc220_a.json",
+        )

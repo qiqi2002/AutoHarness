@@ -1,0 +1,45 @@
+{
+  "contest_id": "abc220",
+  "problem_id": "abc220_a",
+  "problem_title": "A - Find Multiple",
+  "problem_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+  "editorial_index_url": "https://atcoder.jp/contests/abc220/editorial",
+  "editorial_url": "https://atcoder.jp/contests/abc220/editorial/2700",
+  "editorial_title": "Editorial - AtCoder Beginner Contest 220",
+  "editorial_text_excerpt": "A - Find Multiple Editorial by en_translator. Let X be the quotient of B divided by C, rounded down. Let Y = X * C. If Y >= A, Y is an answer; otherwise the answer is -1.",
+  "selection_strategy": "nth_official_english_editorial",
+  "evidence": [
+    {
+      "url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+      "reason": "Problem page confirms the requested problem and title."
+    },
+    {
+      "url": "https://atcoder.jp/contests/abc220/editorial",
+      "reason": "Contest editorial index contains candidate editorial links."
+    },
+    {
+      "url": "https://atcoder.jp/contests/abc220/editorial/2700",
+      "reason": "Selected editorial detail page was opened directly from the contest editorial index."
+    }
+  ],
+  "webwalk_trace": [
+    {
+      "step": 1,
+      "url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
+      "title": "A - Find Multiple",
+      "links": 27
+    },
+    {
+      "step": 2,
+      "url": "https://atcoder.jp/contests/abc220/editorial",
+      "title": "Editorial - AtCoder Beginner Contest 220",
+      "links": 88
+    },
+    {
+      "step": 3,
+      "url": "https://atcoder.jp/contests/abc220/editorial/2700",
+      "title": "Editorial - AtCoder Beginner Contest 220",
+      "links": 30
+    }
+  ]
+}

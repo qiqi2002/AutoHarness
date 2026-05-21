@@ -5,15 +5,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from dataclasses import dataclass
 from typing import Any
 
+from autoharness.demos.io import emit_result
 from autoharness.llm import ChatClient, ChatConfig
 from autoharness.webwalk import WebLink, WebPage, WebWalkLimits, WebWalkTool
 
 
 ARCHIVE_URL = "https://atcoder.jp/contests/archive?lang=en"
+RESULT_SCHEMA = "schemas/tasks/atcoder_latest_editorial.schema.json"
 
 
 @dataclass(frozen=True)
@@ -182,14 +183,18 @@ def merge_with_fallback(model_result: dict[str, Any], fallback: dict[str, Any]) 
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Find the latest AtCoder editorial via WebWalk.")
     parser.add_argument("--no-model", action="store_true", help="Run WebWalk extraction without calling the model.")
+    parser.add_argument("--output", help="Optional path to write the JSON result.")
+    parser.add_argument("--validate-schema", action="store_true", help="Validate output against the task schema.")
     args = parser.parse_args(argv)
 
     result = run_live_demo(use_model=not args.no_model)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    emit_result(
+        result,
+        output=args.output,
+        schema_path=RESULT_SCHEMA if args.validate_schema else None,
+    )
     return 0
 
 

@@ -5,13 +5,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from dataclasses import dataclass
 from typing import Any
 
+from autoharness.demos.io import emit_result
 from autoharness.demos.atcoder_latest_editorial import compact_page, link_to_dict, merge_with_fallback
 from autoharness.llm import ChatClient, ChatConfig
 from autoharness.webwalk import WebLink, WebPage, WebWalkLimits, WebWalkTool
+
+
+RESULT_SCHEMA = "schemas/tasks/atcoder_problem_editorial.schema.json"
 
 
 @dataclass(frozen=True)
@@ -255,16 +258,20 @@ def ask_model_to_structure(
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Find one AtCoder problem editorial via WebWalk.")
     parser.add_argument("contest_id", help="Contest id, for example abc220.")
     parser.add_argument("problem_id", help="Problem id, for example abc220_a.")
     parser.add_argument("--no-model", action="store_true", help="Run WebWalk extraction without calling the model.")
+    parser.add_argument("--output", help="Optional path to write the JSON result.")
+    parser.add_argument("--validate-schema", action="store_true", help="Validate output against the task schema.")
     args = parser.parse_args(argv)
 
     result = run_live_demo(args.contest_id, args.problem_id, use_model=not args.no_model)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    emit_result(
+        result,
+        output=args.output,
+        schema_path=RESULT_SCHEMA if args.validate_schema else None,
+    )
     return 0
 
 

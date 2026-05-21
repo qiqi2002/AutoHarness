@@ -3,6 +3,9 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+import tempfile
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +26,7 @@ from autoharness.demos.atcoder_problem_editorial import (
     select_editorial_candidate,
 )
 from autoharness.llm import ChatConfig, extract_json_object, strip_think_blocks
+from autoharness.demos.io import emit_result
 from autoharness.webwalk import WebWalkTool, parse_page
 
 
@@ -180,6 +184,16 @@ class AtCoderDemoTest(unittest.TestCase):
 
         self.assertEqual(config["name"], "atcoder_problem_editorial")
         self.assertEqual(config["inputs"]["problem_id"], "abc220_a")
+
+    def test_emit_result_writes_json_output(self) -> None:
+        result = json.loads((ROOT / "examples" / "recorded" / "atcoder_problem_editorial_abc220_a.json").read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "result.json"
+
+            with redirect_stdout(StringIO()):
+                emit_result(result, output=str(output), schema_path=None)
+
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["problem_id"], "abc220_a")
 
 
 if __name__ == "__main__":
