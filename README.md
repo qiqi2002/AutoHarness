@@ -90,6 +90,23 @@ Validate both baseline harness specs:
 .\.venv\bin\python.exe -m autoharness.schema_validation schemas/harness-spec.schema.json examples/harnesses/atcoder_latest_editorial.harness.json
 ```
 
+Run a generated harness end to end with Runtime WebWalk, task-aware weak executor, and acceptance validation:
+
+```powershell
+.\.venv\bin\python.exe -m autoharness.run_harness examples/harnesses/atcoder_problem_editorial_abc220_a.harness.json --output artifacts/harness_runs/atcoder_problem_editorial_abc220_a.json --trace-output artifacts/harness_runs/atcoder_problem_editorial_abc220_a.trace.json
+.\.venv\bin\python.exe -m autoharness.run_harness examples/harnesses/atcoder_latest_editorial.harness.json --output artifacts/harness_runs/atcoder_latest_editorial.json --trace-output artifacts/harness_runs/atcoder_latest_editorial.trace.json
+```
+
+Use the model-backed weak executor instead of the task-aware executor:
+
+```powershell
+$env:MINIMAX_API_KEY='...'
+$env:MINIMAX_BASE_URL='https://api.minimaxi.com/v1/'
+$env:MINIMAX_MODEL='MiniMax-M2.7-highspeed'
+$env:AUTOHARNESS_LLM_INSECURE_TLS='1'
+.\.venv\bin\python.exe -m autoharness.run_harness examples/harnesses/atcoder_latest_editorial.harness.json --executor model
+```
+
 Smoke-test model-backed strong builder and weak executor adapters with the same API:
 
 ```powershell

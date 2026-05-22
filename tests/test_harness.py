@@ -10,7 +10,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from autoharness.harness import require_valid_harness_spec, run_harness_spec
 from autoharness.harness_builders import AtCoderLatestEditorialHarnessBuilder, AtCoderProblemEditorialHarnessBuilder
+from autoharness.harness_executors import AtCoderLatestEditorialExecutor, AtCoderProblemEditorialExecutor
 from autoharness.model_harness import ModelAgentExecutor, ModelHarnessBuilder
+from autoharness.run_harness import validate_acceptance
 from autoharness.webwalk import WebWalkRuntimeTool, parse_page
 
 
@@ -70,6 +72,53 @@ class HarnessSpecTest(unittest.TestCase):
             dispatch_actions[1]["payload"]["input_source"]["data"]["arguments"]["url"],
             "https://atcoder.jp/contests/abc999/editorial",
         )
+
+    def test_task_aware_problem_executor_produces_schema_valid_final_result(self) -> None:
+        spec = json.loads(
+            (ROOT / "examples" / "harnesses" / "atcoder_problem_editorial_abc220_a.harness.json").read_text()
+        )
+
+        result = run_harness_spec(
+            spec,
+            executor=AtCoderProblemEditorialExecutor(contest_id="abc220", problem_id="abc220_a"),
+            tools={"webwalk": WebWalkRuntimeTool(AtCoderFixtureWalker())},
+            trace_id="33333333-4444-4555-8666-777777777777",
+        )
+
+        final_result = result.snapshot["final_result"]
+        validate_acceptance(final_result, spec)
+        self.assertEqual(final_result["problem_id"], "abc220_a")
+        self.assertEqual(final_result["editorial_url"], "https://atcoder.jp/contests/abc220/editorial/2700")
+
+    def test_task_aware_latest_executor_produces_schema_valid_final_result(self) -> None:
+        spec = json.loads((ROOT / "examples" / "harnesses" / "atcoder_latest_editorial.harness.json").read_text())
+
+        result = run_harness_spec(
+            spec,
+            executor=AtCoderLatestEditorialExecutor(),
+            tools={"webwalk": WebWalkRuntimeTool(LatestEditorialFixtureWalker())},
+            trace_id="44444444-5555-4666-8777-888888888888",
+        )
+
+        final_result = result.snapshot["final_result"]
+        validate_acceptance(final_result, spec)
+        self.assertEqual(final_result["contest_id"], "abc999")
+        self.assertEqual(final_result["problems"][0]["editorial_url"], "https://atcoder.jp/contests/abc999/editorial/12345")
+
+    def test_acceptance_rejects_unvisited_evidence_url(self) -> None:
+        spec = json.loads((ROOT / "examples" / "harnesses" / "atcoder_latest_editorial.harness.json").read_text())
+        final_result = {
+            "contest_id": "abc999",
+            "contest_title": "AtCoder Beginner Contest 999",
+            "contest_url": "https://atcoder.jp/contests/abc999",
+            "editorial_url": "https://atcoder.jp/contests/abc999/editorial",
+            "problems": [],
+            "evidence": [{"url": "https://atcoder.jp/contests/abc998/editorial", "reason": "wrong"}],
+            "webwalk_trace": [{"step": 1, "url": "https://atcoder.jp/contests/abc999/editorial"}],
+        }
+
+        with self.assertRaises(ValueError):
+            validate_acceptance(final_result, spec)
 
     def test_model_harness_builder_validates_model_output(self) -> None:
         spec = json.loads(

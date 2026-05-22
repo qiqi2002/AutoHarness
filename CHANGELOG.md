@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add a reusable HarnessSpec CLI runner with Runtime WebWalk, acceptance validation, and AtCoder task-aware executors.
 - Add model-backed strong HarnessBuilder and weak AgentExecutor adapters.
 - Add AtCoder latest editorial HarnessSpec fixture and dynamic current-payload workflow references.
 - Add HarnessSpec schema, mainline ADR/SPEC, deterministic builder, and runner.
