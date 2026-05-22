@@ -17,6 +17,9 @@ def main() -> int:
 
     spec = ModelHarnessBuilder(client).build(task)
     print(f"strong_builder_harness_id={spec['harness_id']}")
+    print(f"strong_builder_has_plan={str(bool(spec.get('plan'))).lower()}")
+    if spec.get("plan"):
+        print(f"strong_builder_plan_nodes={len(spec['plan'].get('nodes', []))}")
 
     weak = ModelAgentExecutor(client)
     result = weak.dispatch(

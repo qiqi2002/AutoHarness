@@ -27,6 +27,8 @@ class HarnessSpecTest(unittest.TestCase):
 
         require_valid_harness_spec(spec)
         self.assertEqual(spec["harness_id"], "atcoder-problem-editorial-abc220-abc220_a")
+        self.assertEqual(spec["plan"]["representation"], "sequence")
+        self.assertEqual(spec["plan"]["nodes"][0]["workflow_step_ids"], ["open-problem", "accept-problem"])
         self.assertEqual(spec["workflow"][0]["type"], "dispatch")
 
     def test_generated_atcoder_harness_runs_through_runtime(self) -> None:
@@ -55,6 +57,21 @@ class HarnessSpecTest(unittest.TestCase):
         require_valid_harness_spec(spec)
         dynamic_url = spec["workflow"][2]["input_source"]["data"]["arguments"]["url"]
         self.assertEqual(dynamic_url, {"$from_current_payload": "editorial_url"})
+        self.assertIn("latest finished contest", spec["plan"]["success_criteria"][2])
+
+    def test_harness_run_records_plan_in_update_plan_action(self) -> None:
+        spec = json.loads((ROOT / "examples" / "harnesses" / "atcoder_latest_editorial.harness.json").read_text())
+
+        result = run_harness_spec(
+            spec,
+            executor=LatestEditorialFixtureExecutor(),
+            tools={"webwalk": WebWalkRuntimeTool(LatestEditorialFixtureWalker())},
+            trace_id="55555555-6666-4777-8888-999999999999",
+        )
+
+        plan = result.actions[0]["payload"]["plan_description"]["plan"]
+        self.assertEqual(plan["nodes"][0]["id"], "observe-archive")
+        self.assertEqual(plan["nodes"][0]["workflow_step_ids"], ["open-archive", "accept-archive"])
 
     def test_latest_editorial_harness_resolves_dynamic_tool_argument(self) -> None:
         spec = json.loads((ROOT / "examples" / "harnesses" / "atcoder_latest_editorial.harness.json").read_text())

@@ -63,6 +63,65 @@ class AtCoderProblemEditorialHarnessBuilder:
                     },
                 }
             ],
+            "plan": {
+                "representation": "sequence",
+                "summary": "Open the requested problem, inspect the contest editorial index, then open the selected editorial page.",
+                "assumptions": [
+                    "The task inputs identify a valid AtCoder contest and problem.",
+                    "The editorial URL is either provided by the task or reachable from the contest editorial index.",
+                ],
+                "nodes": [
+                    {
+                        "id": "observe-problem",
+                        "kind": "observe",
+                        "label": "Observe problem page",
+                        "description": "Open the requested problem page and capture its title and URL.",
+                        "expected_evidence": [problem_url],
+                        "workflow_step_ids": ["open-problem", "accept-problem"],
+                    },
+                    {
+                        "id": "observe-editorial-index",
+                        "kind": "observe",
+                        "label": "Observe editorial index",
+                        "description": "Open the contest editorial index and use it as evidence for the editorial selection.",
+                        "expected_evidence": [editorial_index_url],
+                        "workflow_step_ids": ["open-editorial-index", "accept-editorial-index"],
+                    },
+                    {
+                        "id": "extract-editorial",
+                        "kind": "extract",
+                        "label": "Extract editorial result",
+                        "description": "Open the selected editorial page and return the schema-shaped final result.",
+                        "expected_evidence": [editorial_url],
+                        "workflow_step_ids": ["open-editorial-page", "accept-editorial-page"],
+                    },
+                    {
+                        "id": "finish",
+                        "kind": "finish",
+                        "label": "Finish with accepted payload",
+                        "description": "Finish only after the accepted current_payload matches the task output schema.",
+                        "workflow_step_ids": ["finish"],
+                    },
+                ],
+                "edges": [
+                    {"from": "observe-problem", "to": "observe-editorial-index"},
+                    {"from": "observe-editorial-index", "to": "extract-editorial"},
+                    {"from": "extract-editorial", "to": "finish"},
+                ],
+                "success_criteria": [
+                    "Final result matches the task output schema.",
+                    "Evidence URLs are Runtime WebWalk pages that were actually visited.",
+                    "The final editorial URL corresponds to the requested problem.",
+                ],
+                "divergence_policy": {
+                    "detect_with": [
+                        "schema acceptance rule",
+                        "evidence_urls_must_be_visited rule",
+                        "requested contest_id and problem_id",
+                    ],
+                    "on_divergence": "reject_output",
+                },
+            },
             "workflow": [
                 _dispatch_step("open-problem", problem_url),
                 _accept_step("accept-problem", "Accept the problem-page observation."),
@@ -138,6 +197,63 @@ class AtCoderLatestEditorialHarnessBuilder:
                     },
                 }
             ],
+            "plan": {
+                "representation": "sequence",
+                "summary": "Read the contest archive, select the latest finished contest, then open its editorial page.",
+                "assumptions": [
+                    "The archive page lists past contests in newest-first order.",
+                    "The selected contest has a contest editorial page under /contests/{contest_id}/editorial.",
+                ],
+                "nodes": [
+                    {
+                        "id": "observe-archive",
+                        "kind": "observe",
+                        "label": "Observe contest archive",
+                        "description": "Open the AtCoder archive and identify the latest finished contest candidate.",
+                        "expected_evidence": [archive_url],
+                        "workflow_step_ids": ["open-archive", "accept-archive"],
+                    },
+                    {
+                        "id": "decide-editorial-url",
+                        "kind": "decide",
+                        "label": "Choose editorial URL",
+                        "description": "Use the accepted contest candidate to produce the editorial URL for the next Runtime WebWalk step.",
+                        "workflow_step_ids": ["accept-archive", "open-selected-editorial"],
+                    },
+                    {
+                        "id": "extract-editorial-links",
+                        "kind": "extract",
+                        "label": "Extract editorial links",
+                        "description": "Open the selected contest editorial page and extract official problem editorial links.",
+                        "workflow_step_ids": ["open-selected-editorial", "accept-editorial"],
+                    },
+                    {
+                        "id": "finish",
+                        "kind": "finish",
+                        "label": "Finish with accepted payload",
+                        "description": "Finish only after the accepted current_payload matches the task output schema.",
+                        "workflow_step_ids": ["finish"],
+                    },
+                ],
+                "edges": [
+                    {"from": "observe-archive", "to": "decide-editorial-url"},
+                    {"from": "decide-editorial-url", "to": "extract-editorial-links"},
+                    {"from": "extract-editorial-links", "to": "finish"},
+                ],
+                "success_criteria": [
+                    "Final result matches the task output schema.",
+                    "Evidence URLs are Runtime WebWalk pages that were actually visited.",
+                    "The selected contest is the latest finished contest according to the archive observation.",
+                ],
+                "divergence_policy": {
+                    "detect_with": [
+                        "schema acceptance rule",
+                        "evidence_urls_must_be_visited rule",
+                        "latest contest selected from archive observation",
+                    ],
+                    "on_divergence": "reject_output",
+                },
+            },
             "workflow": [
                 _dispatch_step_for_agent("open-archive", "latest_editorial_extractor", archive_url),
                 _accept_step("accept-archive", "Accept the archive observation and selected contest candidate."),

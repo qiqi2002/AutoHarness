@@ -108,6 +108,9 @@
         }
       }
     },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
     "workflow": {
       "type": "array",
       "minItems": 1,
@@ -148,6 +151,156 @@
     }
   },
   "$defs": {
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "representation",
+        "summary",
+        "nodes",
+        "edges",
+        "success_criteria",
+        "divergence_policy"
+      ],
+      "properties": {
+        "representation": {
+          "type": "string",
+          "enum": [
+            "sequence",
+            "graph"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/plan_node"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/plan_edge"
+          }
+        },
+        "success_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "divergence_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "detect_with",
+            "on_divergence"
+          ],
+          "properties": {
+            "detect_with": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "on_divergence": {
+              "type": "string",
+              "enum": [
+                "revise_plan",
+                "reject_output",
+                "fail_run"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "plan_node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "description",
+        "workflow_step_ids"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "observe",
+            "decide",
+            "extract",
+            "verify",
+            "finish"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "workflow_step_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "plan_edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "dispatch_step": {
       "type": "object",
       "additionalProperties": false,

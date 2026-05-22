@@ -5,6 +5,7 @@ AutoHarness is a controllable and auditable multi-agent harness/runtime for buil
 The core idea is simple:
 
 - A strong Orchestrator designs a reusable `HarnessSpec` for a task.
+- The HarnessSpec may include an auditable `plan` graph that explains the Orchestrator intent.
 - The Orchestrator decides by emitting structured Actions.
 - The Runtime validates Actions, applies state guards, and executes allowed work.
 - Sub-Agents produce candidate outputs.
@@ -141,6 +142,7 @@ Without `jsonschema`, runtime tests still run and schema contract tests are skip
 - fake tool dispatch guard
 - Tool Host dispatch abstraction
 - HarnessSpec schema and deterministic harness runner
+- optional HarnessSpec plan graphs linked to executable workflow step IDs
 - double-buffer accept/reject semantics
 - `finish.final_result == current_payload` enforcement
 - happy-path, tool-path, and negative trace fixtures

@@ -111,6 +111,7 @@ def _plan_payload(spec: Mapping[str, Any]) -> dict[str, Any]:
             "harness_id": spec["harness_id"],
             "name": spec["name"],
             "task": deepcopy(spec["task"]),
+            "plan": deepcopy(spec.get("plan")),
             "acceptance": deepcopy(spec["acceptance"]),
         },
         "execution_config": {

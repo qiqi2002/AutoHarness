@@ -8,12 +8,93 @@
     "inputs": {
       "contest_id": "abc220",
       "problem_id": "abc220_a",
+      "editorial_url": "https://atcoder.jp/contests/abc220/editorial/2700",
       "problem_url": "https://atcoder.jp/contests/abc220/tasks/abc220_a",
-      "editorial_index_url": "https://atcoder.jp/contests/abc220/editorial",
-      "editorial_url": "https://atcoder.jp/contests/abc220/editorial/2700"
+      "editorial_index_url": "https://atcoder.jp/contests/abc220/editorial"
     },
     "output_schema": {
-      "$ref": "schemas/tasks/atcoder_problem_editorial.schema.json"
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://autoharness.local/schemas/tasks/atcoder_problem_editorial.schema.json",
+      "title": "AtCoder Problem Editorial Demo Result",
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "contest_id",
+        "problem_id",
+        "problem_title",
+        "problem_url",
+        "editorial_index_url",
+        "editorial_url",
+        "editorial_title",
+        "editorial_text_excerpt",
+        "evidence",
+        "webwalk_trace"
+      ],
+      "properties": {
+        "contest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "problem_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "problem_title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "problem_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "editorial_index_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "editorial_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "editorial_title": {
+          "type": "string"
+        },
+        "editorial_text_excerpt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_strategy": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "reason"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "webwalk_trace": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object"
+          }
+        }
+      }
     }
   },
   "agents": [
@@ -43,6 +124,91 @@
       }
     }
   ],
+  "plan": {
+    "representation": "sequence",
+    "summary": "Open the requested problem, inspect the contest editorial index, then open the selected editorial page.",
+    "assumptions": [
+      "The task inputs identify a valid AtCoder contest and problem.",
+      "The editorial URL is either provided by the task or reachable from the contest editorial index."
+    ],
+    "nodes": [
+      {
+        "id": "observe-problem",
+        "kind": "observe",
+        "label": "Observe problem page",
+        "description": "Open the requested problem page and capture its title and URL.",
+        "expected_evidence": [
+          "https://atcoder.jp/contests/abc220/tasks/abc220_a"
+        ],
+        "workflow_step_ids": [
+          "open-problem",
+          "accept-problem"
+        ]
+      },
+      {
+        "id": "observe-editorial-index",
+        "kind": "observe",
+        "label": "Observe editorial index",
+        "description": "Open the contest editorial index and use it as evidence for the editorial selection.",
+        "expected_evidence": [
+          "https://atcoder.jp/contests/abc220/editorial"
+        ],
+        "workflow_step_ids": [
+          "open-editorial-index",
+          "accept-editorial-index"
+        ]
+      },
+      {
+        "id": "extract-editorial",
+        "kind": "extract",
+        "label": "Extract editorial result",
+        "description": "Open the selected editorial page and return the schema-shaped final result.",
+        "expected_evidence": [
+          "https://atcoder.jp/contests/abc220/editorial/2700"
+        ],
+        "workflow_step_ids": [
+          "open-editorial-page",
+          "accept-editorial-page"
+        ]
+      },
+      {
+        "id": "finish",
+        "kind": "finish",
+        "label": "Finish with accepted payload",
+        "description": "Finish only after the accepted current_payload matches the task output schema.",
+        "workflow_step_ids": [
+          "finish"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "observe-problem",
+        "to": "observe-editorial-index"
+      },
+      {
+        "from": "observe-editorial-index",
+        "to": "extract-editorial"
+      },
+      {
+        "from": "extract-editorial",
+        "to": "finish"
+      }
+    ],
+    "success_criteria": [
+      "Final result matches the task output schema.",
+      "Evidence URLs are Runtime WebWalk pages that were actually visited.",
+      "The final editorial URL corresponds to the requested problem."
+    ],
+    "divergence_policy": {
+      "detect_with": [
+        "schema acceptance rule",
+        "evidence_urls_must_be_visited rule",
+        "requested contest_id and problem_id"
+      ],
+      "on_divergence": "reject_output"
+    }
+  },
   "workflow": [
     {
       "step_id": "open-problem",
