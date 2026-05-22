@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from autoharness.harness import require_valid_harness_spec, run_harness_spec
 from autoharness.harness_builders import AtCoderLatestEditorialHarnessBuilder, AtCoderProblemEditorialHarnessBuilder
 from autoharness.harness_executors import AtCoderLatestEditorialExecutor, AtCoderProblemEditorialExecutor
+from autoharness.llm import ChatConfig
 from autoharness.model_harness import ModelAgentExecutor, ModelHarnessBuilder
 from autoharness.run_harness import validate_acceptance
 from autoharness.webwalk import WebWalkRuntimeTool, parse_page
@@ -158,6 +160,46 @@ class HarnessSpecTest(unittest.TestCase):
 
         self.assertEqual(result, {"answer": "ok"})
 
+    def test_model_agent_executor_retries_invalid_json(self) -> None:
+        executor = ModelAgentExecutor(FakeJsonClient(['{"answer": ', {"answer": "ok"}]))
+
+        result = executor.dispatch(
+            agent=type(
+                "Agent",
+                (),
+                {
+                    "name": "weak_agent",
+                    "role": "Answer from context.",
+                    "prompt": "Return answer.",
+                    "io_schema": {"type": "object"},
+                },
+            )(),
+            input_source={"type": "variable", "data": {"question": "hi"}},
+            current_payload={},
+        )
+
+        self.assertEqual(result, {"answer": "ok"})
+
+    def test_chat_config_reads_timeout_from_env(self) -> None:
+        old_values = {
+            key: os.environ.get(key)
+            for key in ["MINIMAX_API_KEY", "MODEL_API_KEY", "MINIMAX_TIMEOUT_SECONDS", "MODEL_TIMEOUT_SECONDS"]
+        }
+        try:
+            os.environ["MINIMAX_API_KEY"] = "test-key"
+            os.environ["MINIMAX_TIMEOUT_SECONDS"] = "180"
+            os.environ.pop("MODEL_TIMEOUT_SECONDS", None)
+
+            config = ChatConfig.from_env()
+
+            self.assertEqual(config.timeout_seconds, 180)
+        finally:
+            for key, value in old_values.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
 
 class AtCoderFixtureExecutor:
     def dispatch(self, agent, input_source, current_payload):
@@ -301,6 +343,19 @@ class FakeJsonClient:
         self.responses = list(responses)
 
     def complete_json(self, messages):
+        response = self._pop_response(messages)
+        if isinstance(response, str):
+            raise AssertionError("complete_json fake response must be an object")
+        return response
+
+    def complete(self, messages):
+        response = self._pop_response(messages)
+        if isinstance(response, str):
+            return response
+        return json.dumps(response)
+
+    def _pop_response(self, messages):
+        del messages
         if not self.responses:
             raise AssertionError("fake client exhausted")
         return self.responses.pop(0)

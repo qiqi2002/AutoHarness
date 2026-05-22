@@ -13,7 +13,7 @@ from autoharness.harness_executors import AtCoderLatestEditorialExecutor, AtCode
 from autoharness.llm import ChatClient, ChatConfig
 from autoharness.model_harness import ModelAgentExecutor
 from autoharness.runtime import AgentExecutor
-from autoharness.schema_validation import require_valid_with_schema
+from autoharness.schema_validation import load_json, require_valid_with_schema
 from autoharness.webwalk import WebWalkLimits, WebWalkRuntimeTool, WebWalkTool
 
 
@@ -84,7 +84,7 @@ def _build_executor(spec: Mapping[str, Any], executor_name: str) -> AgentExecuto
     if selected == "atcoder_latest_editorial":
         return AtCoderLatestEditorialExecutor()
     if selected == "model":
-        return ModelAgentExecutor(ChatClient(ChatConfig.from_env()))
+        return ModelAgentExecutor(ChatClient(ChatConfig.from_env()), output_schema=_task_output_schema(spec))
     raise ValueError(f"no executor is available for task/executor: {selected}")
 
 
@@ -121,6 +121,16 @@ def _require_final_result(result: HarnessRunResult) -> dict[str, Any]:
     if not isinstance(final_result, dict):
         raise ValueError("harness did not produce a final_result object")
     return final_result
+
+
+def _task_output_schema(spec: Mapping[str, Any]) -> dict[str, Any] | None:
+    ref = spec.get("task", {}).get("output_schema", {}).get("$ref")
+    if not isinstance(ref, str):
+        return None
+    schema = load_json(ref)
+    if not isinstance(schema, dict):
+        raise ValueError(f"task output schema must be an object: {ref}")
+    return schema
 
 
 def _require_evidence_urls_visited(final_result: Mapping[str, Any]) -> None:

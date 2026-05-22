@@ -7,7 +7,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 from autoharness.harness import require_valid_harness_spec
-from autoharness.llm import ChatClient
+from autoharness.llm import ChatClient, extract_json_object, strip_think_blocks
 from autoharness.runtime import AgentDefinition
 
 
@@ -96,8 +96,16 @@ class ModelHarnessBuilder:
 class ModelAgentExecutor:
     """Use a weak model as Runtime AgentExecutor."""
 
-    def __init__(self, client: ChatClient) -> None:
+    def __init__(
+        self,
+        client: ChatClient,
+        *,
+        output_schema: Mapping[str, Any] | None = None,
+        max_retries: int = 1,
+    ) -> None:
         self.client = client
+        self.output_schema = deepcopy(dict(output_schema)) if output_schema else None
+        self.max_retries = max_retries
 
     def dispatch(
         self,
@@ -105,25 +113,48 @@ class ModelAgentExecutor:
         input_source: Mapping[str, Any],
         current_payload: Mapping[str, Any],
     ) -> dict[str, Any]:
-        return self.client.complete_json(
-            [
-                {
-                    "role": "system",
-                    "content": (
-                        f"You are weak model agent {agent.name}. Role: {agent.role}. "
-                        f"Prompt: {agent.prompt} Return exactly one JSON object. No markdown."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": json.dumps(
-                        {
-                            "input_source": deepcopy(dict(input_source)),
-                            "current_payload": deepcopy(dict(current_payload)),
-                            "io_schema": agent.io_schema,
-                        },
-                        ensure_ascii=False,
-                    ),
-                },
-            ]
-        )
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    f"You are weak model agent {agent.name}. Role: {agent.role}. "
+                    f"Prompt: {agent.prompt} Return exactly one JSON object. No markdown. "
+                    "Your output enters Runtime temp_buffer and replaces current_payload after acceptance. "
+                    "Preserve relevant current_payload fields unless the new observation corrects them. "
+                    "When the input is a tool result, preserve the Runtime-provided webwalk_trace and cite observed URLs in evidence. "
+                    "Evidence URLs must be URLs that appear in webwalk_trace; do not cite linked pages as evidence unless Runtime opened them. "
+                    "If a target_output_schema is provided and the current observation contains enough information, match that schema exactly."
+                ),
+            },
+            {
+                "role": "user",
+                "content": json.dumps(
+                    {
+                        "input_source": deepcopy(dict(input_source)),
+                        "current_payload": deepcopy(dict(current_payload)),
+                        "io_schema": agent.io_schema,
+                        "target_output_schema": deepcopy(self.output_schema),
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+        ]
+        last_error: Exception | None = None
+        for _ in range(self.max_retries + 1):
+            content = self.client.complete(messages)
+            try:
+                return extract_json_object(strip_think_blocks(content))
+            except (json.JSONDecodeError, ValueError) as exc:
+                last_error = exc
+                messages.append({"role": "assistant", "content": content})
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Your previous response was not parseable as one JSON object. "
+                            "Return the corrected JSON object only, with no markdown or explanation. "
+                            f"Parser error: {exc}"
+                        ),
+                    }
+                )
+        raise ValueError(f"model did not return valid JSON after retries: {last_error}")

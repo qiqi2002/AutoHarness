@@ -25,10 +25,12 @@ class ChatConfig:
         api_key = os.environ.get("MINIMAX_API_KEY") or os.environ.get("MODEL_API_KEY")
         if not api_key:
             raise RuntimeError("MINIMAX_API_KEY or MODEL_API_KEY is required")
+        timeout_seconds = int(os.environ.get("MINIMAX_TIMEOUT_SECONDS") or os.environ.get("MODEL_TIMEOUT_SECONDS") or "60")
         return cls(
             api_key=api_key,
             base_url=os.environ.get("MINIMAX_BASE_URL", "https://api.minimaxi.com/v1/"),
             model=os.environ.get("MINIMAX_MODEL", "MiniMax-M2.7-highspeed"),
+            timeout_seconds=timeout_seconds,
             insecure_tls=os.environ.get("AUTOHARNESS_LLM_INSECURE_TLS") == "1",
         )
 
